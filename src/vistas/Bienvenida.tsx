@@ -75,7 +75,7 @@ const Bienvenida: React.FC = () => {
                   <Button variant="primary">Go somewhere</Button>
   
                   {/* Nuevo botón que redirige a la vista de Bienvenida */}
-                  <Link to="/bienvenida2">
+                  <Link to="/login">
                     <Button variant="secondary" className="ml-2">Ir a Bienvenida</Button>
                   </Link>
   
