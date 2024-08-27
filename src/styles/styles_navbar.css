@@ -1,0 +1,51 @@
+/* Estilos para asegurar que el Navbar ocupe el ancho completo de la pantalla */
+.navbar {
+    width: 100vw; /* Asegura que el navbar ocupe todo el ancho de la ventana */
+    margin: 0; /* Elimina cualquier margen aplicado */
+    padding: 0; /* Elimina cualquier padding aplicado */
+    position: relative; /* Para asegurar que no afecte otros elementos */
+    z-index: 1000; /* Para que el navbar siempre esté en frente de otros elementos */
+  }
+  
+  /* Estilos para el contenedor dentro del Navbar */
+  .navbar .container {
+    max-width: 100%; /* Asegura que el contenedor ocupe todo el ancho dentro del navbar */
+    padding-left: 0; /* Elimina padding lateral izquierdo */
+    padding-right: 0; /* Elimina padding lateral derecho */
+  }
+  
+  /* Ajusta el padding de los elementos dentro del Navbar para que queden bien alineados */
+  .navbar-nav .nav-link {
+    padding: 0.5rem 1rem; /* Ajusta los espacios entre los enlaces de navegación */
+    color: white; /* Asegura que los enlaces sean visibles (puedes cambiar este color) */
+  }
+  
+  /* Estilos para el toggle button en pantallas pequeñas */
+  .navbar-toggler {
+    border: none; /* Elimina los bordes del toggle button */
+  }
+  
+  /* Estilos adicionales para que no haya ningún margen o padding global no deseado */
+  html, body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+  }
+  
+  /* Ajuste del fondo del navbar para que se vea correctamente */
+  .navbar.bg-body-tertiary {
+    background-color: #343a40; /* Un color de fondo oscuro para el navbar */
+  }
+  
+  /* Evita la franja blanca debajo del navbar */
+  .navbar-collapse {
+    margin-bottom: 0;
+  }
+  
+  /* Para que el dropdown del navbar funcione bien */
+  .navbar-nav .dropdown-menu {
+    background-color: #343a40;
+    border: none;
+  }
+  

@@ -11,6 +11,7 @@ import { auth, firestore } from "../firebase";
 import bienvenida_2 from '../assets/bienvenida_2.png';
 import bienvenida_3 from '../assets/bienvenida_3.png';
 
+
 const Login: React.FC = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");

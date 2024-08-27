@@ -1,4 +1,5 @@
 import { Navbar, Container, Nav, Col } from 'react-bootstrap';
+import '../styles/style_sidebar.css';
 
 function Sidebar() {
   return (

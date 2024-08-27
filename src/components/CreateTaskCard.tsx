@@ -8,6 +8,22 @@ const CreateTaskCard: React.FC = () => {
   const [checkOutTime, setCheckOutTime] = useState('');
   const [contactPerson, setContactPerson] = useState('');
   const [tools, setTools] = useState('');
+  const [maintenanceType, setMaintenanceType] = useState('');
+
+  // Lista de lugares disponibles
+  const places = [
+    "Tottus Alameda", "Tottus Buin", "Tottus San Bernardo", "Tottus El Bosque",
+    "HC Independencia", "HC Estación Central", "HC El Bosque",
+    "Falabella Costanera", "Falabella Independencia", "Falabella Parque Arauco"
+  ];
+
+  // Lista de tipos de mantenimiento con sus colores
+  const maintenanceTypes = [
+    { value: 'mantencion_preventiva', label: 'Mantención Preventiva', color: 'green' },
+    { value: 'mantencion_correctiva', label: 'Mantención Correctiva', color: 'orange' },
+    { value: 'inspeccion', label: 'Inspección', color: 'blue' },
+    { value: 'emergencia', label: 'Emergencia', color: 'red' },
+  ];
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -22,6 +38,7 @@ const CreateTaskCard: React.FC = () => {
         checkOutTime,
         contactPerson,
         tools,
+        maintenanceType,
       });
       alert("Card creada con éxito!");
       setPlace('');
@@ -30,6 +47,7 @@ const CreateTaskCard: React.FC = () => {
       setCheckOutTime('');
       setContactPerson('');
       setTools('');
+      setMaintenanceType('');
     } catch (error) {
       console.error("Error al crear la card: ", error);
     }
@@ -37,19 +55,20 @@ const CreateTaskCard: React.FC = () => {
 
   return (
     <form onSubmit={handleSubmit}>
-      <input 
-        type="text" 
-        placeholder="Lugar" 
-        value={place} 
-        onChange={e => setPlace(e.target.value)} 
-        required 
-      />
+      <select value={place} onChange={e => setPlace(e.target.value)} required>
+        <option value="" disabled>Seleccione un lugar</option>
+        {places.map((placeOption) => (
+          <option key={placeOption} value={placeOption}>{placeOption}</option>
+        ))}
+      </select>
+
       <input 
         type="date" 
         value={date} 
         onChange={e => setDate(e.target.value)} 
         required 
       />
+
       <input 
         type="time" 
         placeholder="Hora de Ingreso" 
@@ -57,6 +76,7 @@ const CreateTaskCard: React.FC = () => {
         onChange={e => setCheckInTime(e.target.value)} 
         required 
       />
+
       <input 
         type="time" 
         placeholder="Hora de Egreso" 
@@ -64,6 +84,7 @@ const CreateTaskCard: React.FC = () => {
         onChange={e => setCheckOutTime(e.target.value)} 
         required 
       />
+
       <input 
         type="text" 
         placeholder="Personal de Contacto" 
@@ -71,6 +92,7 @@ const CreateTaskCard: React.FC = () => {
         onChange={e => setContactPerson(e.target.value)} 
         required 
       />
+
       <input 
         type="text" 
         placeholder="Herramientas" 
@@ -78,10 +100,19 @@ const CreateTaskCard: React.FC = () => {
         onChange={e => setTools(e.target.value)} 
         required 
       />
+
+      <select value={maintenanceType} onChange={e => setMaintenanceType(e.target.value)} required>
+        <option value="" disabled>Seleccione un tipo de mantenimiento</option>
+        {maintenanceTypes.map((type) => (
+          <option key={type.value} value={type.value}>
+            {type.label}
+          </option>
+        ))}
+      </select>
+
       <button type="submit">Crear Card</button>
     </form>
   );
 };
 
 export default CreateTaskCard;
-

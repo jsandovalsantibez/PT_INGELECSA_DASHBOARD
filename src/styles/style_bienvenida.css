@@ -1,0 +1,64 @@
+/* Carrusel */
+.carousel-wrapper {
+    width: 100%; /* Cambia 100vw por 100% para que se ajuste al contenedor */
+    height: auto;
+    overflow: hidden;
+    margin: 0; /* Asegúrate de que no haya márgenes que puedan causar desbordamiento */
+    padding: 0; /* Asegúrate de que no haya padding adicional */
+}
+
+.carousel-item img {
+    width: 100%; /* Se mantiene igual para que la imagen cubra el 100% del contenedor */
+    height: auto;
+    object-fit: cover;
+    max-height: 500px; /* Mantén la altura máxima */
+}
+
+/* Sección de cards debajo del carrusel */
+/* Sección de cards debajo del carrusel */
+.cards-section {
+    background: linear-gradient(180deg, #002366 0%, #000000 100%);
+    padding: 80px 0;
+    min-height: 800px; /* 4 veces el largo del carrusel */
+    position: relative;
+}
+
+
+/* Elementos flotantes animados */
+.floating-elements {
+    position: absolute;
+    top: 20%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
+.float-circle {
+    width: 100px;
+    height: 100px;
+    background-color: rgba(255, 99, 132, 0.6);
+    border-radius: 50%;
+    position: absolute;
+    animation: float 6s ease-in-out infinite;
+}
+
+.float-square {
+    width: 100px;
+    height: 100px;
+    background-color: rgba(54, 162, 235, 0.6);
+    position: absolute;
+    left: 150px;
+    animation: float 4s ease-in-out infinite;
+}
+
+/* Animación de flotación */
+@keyframes float {
+    0% {
+        transform: translateY(0);
+    }
+    50% {
+        transform: translateY(-20px);
+    }
+    100% {
+        transform: translateY(0);
+    }
+}

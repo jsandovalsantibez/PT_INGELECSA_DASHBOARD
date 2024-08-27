@@ -7,6 +7,8 @@ import TaskCardsList from '../components/TaskCardsList';
 import Header from './Header';
 import Sidebar from '../components/sideBar';
 import { useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
+import { Button } from 'react-bootstrap';
 
 
 const Dashboard: React.FC = () => {
@@ -57,9 +59,18 @@ const Dashboard: React.FC = () => {
     <div className="d-flex">
       <Sidebar />
       <div className="flex-grow-1">
-        <Header />
+        <Header/>
         <div className="p-4">
           <h1>Gestión de Trabajos y Mantenciones</h1>
+          <Link to="/profile">
+            <Button variant="secondary" className="ml-2">Perfil</Button>
+          </Link>
+          <Link to="/sidebar">
+            <Button variant="secondary" className="ml-2">sidebar</Button>
+          </Link>
+          <Link to="/tasklist">
+            <Button variant="secondary" className="ml-2">sidebar</Button>
+          </Link>
           <button onClick={handleLogout}>Cerrar Sesión</button>
           <hr />
           {role === 'gerente_operaciones' && <CreateTaskCard />}

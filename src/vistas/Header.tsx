@@ -1,6 +1,8 @@
 import React from 'react';
-import { Navbar, Nav, Container } from 'react-bootstrap';
+import { Navbar, Nav, Container, Button } from 'react-bootstrap';
 import logo_2 from '../assets/logo_2.png';
+import { Link } from 'react-router-dom';
+
 
 const Header: React.FC = () => {
     return (
@@ -21,6 +23,9 @@ const Header: React.FC = () => {
                         <Nav.Link href="#about">Acerca de</Nav.Link>
                         <Nav.Link href="#contact">Contacto</Nav.Link>
                     </Nav>
+                    <Link to="/login">
+                         <Button variant="secondary" className="ml-2">IngeApp, Ingresa Aquí</Button>
+                    </Link>
                 </Navbar.Collapse>
             </Container>
         </Navbar>

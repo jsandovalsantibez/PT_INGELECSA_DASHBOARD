@@ -1,0 +1,34 @@
+.sidebar {
+    height: 100vh; /* Ocupa el 100% de la altura de la pantalla */
+    overflow-y: auto; /* Para permitir el scroll si es necesario */
+  }
+
+.d-flex {
+    display: flex;
+    height: 100vh;
+}
+  
+.flex-grow-1 {
+    flex-grow: 1;
+    overflow-y: auto;
+}
+
+.sidebar-container {
+    height: 100vh;
+    background-color: #343a40;
+  }
+  
+  .sidebar-nav {
+    color: white;
+  }
+  
+  .sidebar-link {
+    color: white;
+    padding: 10px;
+  }
+  
+  .sidebar-link:hover {
+    background-color: #495057;
+    text-decoration: none;
+  }
+  

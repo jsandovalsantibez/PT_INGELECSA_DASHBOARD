@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { getFirestore, collection, getDocs, query, where } from "firebase/firestore"; 
-import { auth} from '../firebase';
+import { auth } from '../firebase';
 
 interface TaskCardsListProps {
   userRole: string;
@@ -14,15 +14,20 @@ const TaskCardsList: React.FC<TaskCardsListProps> = ({ userRole }) => {
       const db = getFirestore();
       let q;
 
-      if (userRole === 'Gerente de Operaciones') {
-        q = collection(db, "taskCards");
+      if (userRole === 'gerente_operaciones') {
+        q = collection(db, "taskCards");  // Aquí se cambió "task" por "taskCards"
       } else {
-        q = query(collection(db, "taskCards"), where("assignedTo", "==", auth.currentUser?.uid));
+        q = query(collection(db, "taskCards"), where("assignedTo", "==", auth.currentUser?.uid));  // Aquí también
       }
 
-      const querySnapshot = await getDocs(q);
-      const cards = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      setTaskCards(cards);
+      try {
+        const querySnapshot = await getDocs(q);
+        const cards = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        console.log("Tarjetas cargadas:", cards);
+        setTaskCards(cards);
+      } catch (error) {
+        console.error("Error al cargar las tarjetas:", error);
+      }
     };
 
     fetchTaskCards();
