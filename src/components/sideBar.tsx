@@ -7,19 +7,22 @@ import {
   CDBSidebarMenu,
   CDBSidebarMenuItem,
 } from 'cdbreact';
-import { NavLink } from 'react-router-dom';
 
-const Sidebar: React.FC = () => {
+interface SidebarProps {
+  setActiveView: (view: string) => void;
+}
+
+const Sidebar: React.FC<SidebarProps> = ({ setActiveView }) => {
   return (
     <div style={{ display: 'flex', height: '100vh', overflow: 'scroll initial' }}>
       <CDBSidebar
         textColor="#fff"
         backgroundColor="#333"
-        className=""  // Puedes proporcionar una clase CSS si lo necesitas
-        breakpoint={768}  // Define el punto de quiebre para hacer el sidebar responsivo
-        toggled={false}  // Puedes cambiar esto si necesitas que el sidebar sea colapsable
-        minWidth="200px"  // Ancho mínimo del sidebar
-        maxWidth="300px"  // Ancho máximo del sidebar
+        className=""
+        breakpoint={768}
+        toggled={false}
+        minWidth="200px"
+        maxWidth="300px"
       >
         <CDBSidebarHeader prefix={<i className="fa fa-bars fa-large"></i>}>
           <a href="/" className="text-decoration-none" style={{ color: 'inherit' }}>
@@ -29,30 +32,20 @@ const Sidebar: React.FC = () => {
 
         <CDBSidebarContent className="sidebar-content">
           <CDBSidebarMenu>
-            <NavLink to="/" className={({ isActive }) => (isActive ? 'activeClicked' : '')}>
-              <CDBSidebarMenuItem>Dashboard</CDBSidebarMenuItem>
-            </NavLink>
-            <NavLink to="/tables" className={({ isActive }) => (isActive ? 'activeClicked' : '')}>
-              <CDBSidebarMenuItem>Tables</CDBSidebarMenuItem>
-            </NavLink>
-            <NavLink to="/profile" className={({ isActive }) => (isActive ? 'activeClicked' : '')}>
+            <div onClick={() => setActiveView('taskcardlist')}>
+              <CDBSidebarMenuItem>Task</CDBSidebarMenuItem>
+            </div>
+            <div onClick={() => setActiveView('profile')}>
               <CDBSidebarMenuItem>Profile page</CDBSidebarMenuItem>
-            </NavLink>
-            <NavLink to="/analytics" className={({ isActive }) => (isActive ? 'activeClicked' : '')}>
-              <CDBSidebarMenuItem>Analytics</CDBSidebarMenuItem>
-            </NavLink>
-            <NavLink to="/hero404" target="_blank" className={({ isActive }) => (isActive ? 'activeClicked' : '')}>
-              <CDBSidebarMenuItem>404 page</CDBSidebarMenuItem>
-            </NavLink>
+            </div>
+            <div onClick={() => setActiveView('createtask')}>
+              <CDBSidebarMenuItem>Create Task</CDBSidebarMenuItem>
+            </div>
           </CDBSidebarMenu>
         </CDBSidebarContent>
 
         <CDBSidebarFooter>
-          <div
-            style={{
-              padding: '20px 5px',
-            }}
-          >
+          <div style={{ padding: '20px 5px' }}>
             Sidebar Footer
           </div>
         </CDBSidebarFooter>
