@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { onAuthStateChanged, signOut } from "firebase/auth";
+import { useNavigate } from 'react-router-dom'; // Importa useNavigate
 import { auth, firestore } from '../firebase';
 import { doc, getDoc } from "firebase/firestore";
 import Sidebar from '../components/sideBar';
@@ -12,6 +13,7 @@ const Dashboard: React.FC = () => {
   const [user, setUser] = useState<any>(null);
   const [role, setRole] = useState<string>('');
   const [activeView, setActiveView] = useState<string>('taskcardlist'); // Estado para manejar la vista activa
+  const navigate = useNavigate(); // Inicializa el hook useNavigate
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
@@ -38,6 +40,7 @@ const Dashboard: React.FC = () => {
     try {
       await signOut(auth);
       alert("Sesión cerrada con éxito");
+      navigate('/'); // Redirige a la pantalla de bienvenida después de cerrar sesión
     } catch (error) {
       console.error("Error al cerrar sesión:", error);
     }
@@ -62,16 +65,17 @@ const Dashboard: React.FC = () => {
 
   return (
     <div className="d-flex">
-      <Sidebar setActiveView={setActiveView} />
+      <Sidebar setActiveView={setActiveView} handleLogout={handleLogout} />
       <div className="flex-grow-1">
         <Header />
         <div className="p-4">
           <h1>Gestión de Trabajos y Mantenciones</h1>
-          <button onClick={handleLogout}>Cerrar Sesión</button>
           <hr />
           
-          {/* Renderiza la vista activa según el estado */}
-          {renderActiveView()}
+          {/* Contenedor con scrollbar para el contenido */}
+          <div style={{ maxHeight: '70vh', overflowY: 'auto' }}>
+            {renderActiveView()}
+          </div>
         </div>
       </div>
     </div>

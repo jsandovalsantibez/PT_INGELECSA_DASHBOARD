@@ -1,13 +1,16 @@
 import React, { useEffect, useState } from 'react';
 import { getFirestore, collection, getDocs, query, where } from "firebase/firestore"; 
+import Card from 'react-bootstrap/Card';
+import Row from 'react-bootstrap/Row';
+import Col from 'react-bootstrap/Col';
+import Button from 'react-bootstrap/Button';
+import Modal from 'react-bootstrap/Modal';
 import { auth } from '../firebase';
 
-interface TaskCardsListProps {
-  userRole: string;
-}
-
-const TaskCardsList: React.FC<TaskCardsListProps> = ({ userRole }) => {
+const TaskCardsList: React.FC<{ userRole: string }> = ({ userRole }) => {
   const [taskCards, setTaskCards] = useState<any[]>([]);
+  const [showModal, setShowModal] = useState(false);
+  const [selectedTask, setSelectedTask] = useState<any>(null);
 
   useEffect(() => {
     const fetchTaskCards = async () => {
@@ -32,19 +35,54 @@ const TaskCardsList: React.FC<TaskCardsListProps> = ({ userRole }) => {
     fetchTaskCards();
   }, [userRole]);
 
+  const handleShowDetails = (task: any) => {
+    setSelectedTask(task);
+    setShowModal(true);
+  };
+
+  const handleCloseModal = () => setShowModal(false);
+
   return (
-    <div className="card-container">
-      {taskCards.map(card => (
-        <div key={card.id} className="card" style={{ border: '1px solid #ccc', padding: '20px', marginBottom: '20px', borderRadius: '10px', boxShadow: '0px 0px 10px rgba(0,0,0,0.1)' }}>
-          <h2 style={{ margin: '0 0 10px 0', fontSize: '1.5rem', color: '#333' }}>{card.place}</h2>
-          <p style={{ margin: '0 0 10px 0', fontSize: '1rem', color: '#666' }}>{card.date}</p>
-          <p style={{ margin: '0 0 5px 0' }}><strong>Ingreso:</strong> {card.checkInTime}</p>
-          <p style={{ margin: '0 0 5px 0' }}><strong>Egreso:</strong> {card.checkOutTime}</p>
-          <p style={{ margin: '0 0 5px 0' }}><strong>Contacto:</strong> {card.contactPerson}</p>
-          <p style={{ margin: '0 0 5px 0' }}><strong>Herramientas:</strong> {card.tools}</p>
-        </div>
-      ))}
-    </div>
+    <>
+      <Row xs={1} md={3} className="g-3" style={{ marginRight: 0, marginLeft: 0 }}>
+        {taskCards.map(card => (
+          <Col key={card.id}>
+            <Card style={{ 
+              margin: '0.5rem', 
+              minHeight: '200px',
+              backgroundColor: '#f8f9fa', /* Fondo gris claro */
+            }}>
+              <Card.Body className="d-flex flex-column justify-content-center align-items-center" style={{ color: 'black' }}>
+                <Card.Title>{card.place}</Card.Title>
+                <Card.Text>{card.date}</Card.Text>
+                <Button variant="primary" onClick={() => handleShowDetails(card)}>Ver detalles</Button>
+              </Card.Body>
+            </Card>
+          </Col>
+        ))}
+      </Row>
+
+      <Modal show={showModal} onHide={handleCloseModal}>
+        <Modal.Header closeButton>
+          <Modal.Title>Detalles de la Tarea</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          {selectedTask && (
+            <>
+              <h5>{selectedTask.place}</h5>
+              <p>Fecha: {selectedTask.date}</p>
+              <p>Persona de contacto: {selectedTask.contactPerson}</p>
+              <p>Detalles adicionales: {selectedTask.details || 'No disponibles'}</p>
+            </>
+          )}
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={handleCloseModal}>
+            Cerrar
+          </Button>
+        </Modal.Footer>
+      </Modal>
+    </>
   );
 };
 

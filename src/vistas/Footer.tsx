@@ -1,6 +1,5 @@
 import React from 'react';
 import { Container } from 'react-bootstrap';
-import bienvenida_1 from '../assets/bienvenida_1.png';
 
 const Footer: React.FC = () => {
     return (

@@ -7,12 +7,16 @@ import {
   CDBSidebarMenu,
   CDBSidebarMenuItem,
 } from 'cdbreact';
+import { Button } from 'react-bootstrap';
 
 interface SidebarProps {
   setActiveView: (view: string) => void;
+  handleLogout: () => void; // Añadimos la función de logout como prop
 }
 
-const Sidebar: React.FC<SidebarProps> = ({ setActiveView }) => {
+const Sidebar: React.FC<SidebarProps> = ({ setActiveView, handleLogout }) => {
+  const [collapsed, setCollapsed] = React.useState(false);
+
   return (
     <div style={{ display: 'flex', height: '100vh', overflow: 'scroll initial' }}>
       <CDBSidebar
@@ -21,10 +25,12 @@ const Sidebar: React.FC<SidebarProps> = ({ setActiveView }) => {
         className=""
         breakpoint={768}
         toggled={false}
-        minWidth="200px"
-        maxWidth="300px"
+        minWidth={collapsed ? "60px" : "150px"} // Ajuste del ancho cuando está colapsada
+        maxWidth={collapsed ? "60px" : "150px"} // Ajuste del ancho cuando no está colapsada
       >
-        <CDBSidebarHeader prefix={<i className="fa fa-bars fa-large"></i>}>
+        <CDBSidebarHeader 
+          prefix={<i className="fa fa-bars fa-large" onClick={() => setCollapsed(!collapsed)}></i>}
+        >
           <a href="/" className="text-decoration-none" style={{ color: 'inherit' }}>
             Sidebar
           </a>
@@ -46,7 +52,9 @@ const Sidebar: React.FC<SidebarProps> = ({ setActiveView }) => {
 
         <CDBSidebarFooter>
           <div style={{ padding: '20px 5px' }}>
-            Sidebar Footer
+            <Button variant="danger" onClick={handleLogout}>
+              Cerrar Sesión
+            </Button>
           </div>
         </CDBSidebarFooter>
       </CDBSidebar>
