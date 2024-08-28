@@ -23,7 +23,7 @@ const Dashboard: React.FC = () => {
         console.log('Usuario autenticado:', currentUser.uid);
         
         try {
-          const userDocRef = doc(firestore, 'users', currentUser.uid);
+          const userDocRef = doc(firestore, 'users', currentUser.uid);  
           const userDoc = await getDoc(userDocRef);
           const userRole = userDoc.data()?.role;
           console.log('Rol del usuario:', userRole);
