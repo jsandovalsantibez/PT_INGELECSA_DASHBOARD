@@ -25,7 +25,13 @@ const TaskCardsList: React.FC<{ userRole: string }> = ({ userRole }) => {
 
       try {
         const querySnapshot = await getDocs(q);
-        const cards = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        let cards = querySnapshot.docs.map(doc => ({
+          id: doc.id, 
+          ...(doc.data() as any),
+        }));
+
+        cards = cards.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
         setTaskCards(cards);
       } catch (error) {
         console.error("Error al cargar las tarjetas:", error);
@@ -43,14 +49,14 @@ const TaskCardsList: React.FC<{ userRole: string }> = ({ userRole }) => {
   const handleCloseModal = () => setShowModal(false);
 
   return (
-    <>
+    <div style={{ backgroundColor: '#1a2b4c', minHeight: '100vh', padding: '20px' }}>
       <Row xs={1} md={3} className="g-3" style={{ marginRight: 0, marginLeft: 0 }}>
         {taskCards.map(card => (
           <Col key={card.id}>
             <Card style={{ 
               margin: '0.5rem', 
               minHeight: '200px',
-              backgroundColor: '#f8f9fa', /* Fondo gris claro */
+              backgroundColor: '#f8f9fa', // Fondo gris claro
             }}>
               <Card.Body className="d-flex flex-column justify-content-center align-items-center" style={{ color: 'black' }}>
                 <Card.Title>{card.place}</Card.Title>
@@ -82,7 +88,7 @@ const TaskCardsList: React.FC<{ userRole: string }> = ({ userRole }) => {
           </Button>
         </Modal.Footer>
       </Modal>
-    </>
+    </div>
   );
 };
 
