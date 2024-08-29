@@ -6,7 +6,7 @@ import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { auth, firestore, storage } from '../firebase';
 import UsersImg from './UsersImg';  // Asegúrate de que la ruta esté correcta
 
-const HolaMundo: React.FC = () => {
+const CreateUser: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
@@ -153,4 +153,4 @@ const HolaMundo: React.FC = () => {
   );
 };
 
-export default HolaMundo;
+export default CreateUser;

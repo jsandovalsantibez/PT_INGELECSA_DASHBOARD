@@ -5,7 +5,7 @@ import Dashboard from './vistas/Dashboard';
 import Welcome from './vistas/Welcome';
 import Login from './vistas/Login';
 import Profile from './vistas/Profile';
-import HolaMundo from './components/HolaMundo';
+import CreateUser from './components/CreateUser';
 import { AuthProvider } from './components/AuthContext';  // Importa el AuthProvider
 
 const App: React.FC = () => {
@@ -18,7 +18,7 @@ const App: React.FC = () => {
           <Route path="/profile" element={<Profile />} />
           <Route path="/about" element={<About />} />
           <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/holamundo" element={<HolaMundo />} />
+          <Route path="/createuser" element={<CreateUser />} />
         </Routes>
       </Router>
     </AuthProvider>

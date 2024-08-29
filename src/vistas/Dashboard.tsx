@@ -8,7 +8,7 @@ import Header from './Header';
 import Profile from './Profile';
 import TaskCardsList from '../components/TaskCardsList';
 import CreateTaskCard from '../components/CreateTaskCard';
-import HolaMundo from '../components/HolaMundo'; // Importa la vista HolaMundo
+import HolaMundo from '../components/CreateUser'; // Importa la vista HolaMundo
 
 const Dashboard: React.FC = () => {
   const [user, setUser] = useState<any>(null);
@@ -55,7 +55,7 @@ const Dashboard: React.FC = () => {
         return <TaskCardsList userRole={role} />;
       case 'createtask':
         return <CreateTaskCard />;
-      case 'holamundo': // Añadido para manejar la vista HolaMundo
+      case 'createuser':
         return <HolaMundo />;
       default:
         return <TaskCardsList userRole={role} />;

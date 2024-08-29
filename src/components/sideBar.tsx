@@ -47,7 +47,7 @@ const Sidebar: React.FC<SidebarProps> = ({ setActiveView, handleLogout }) => {
             <div onClick={() => setActiveView('createtask')}>
               <CDBSidebarMenuItem>Create Task</CDBSidebarMenuItem>
             </div>
-            <div onClick={() => setActiveView('holamundo')}> {/* Botón siempre visible */}
+            <div onClick={() => setActiveView('createuser')}> {/* Botón siempre visible */}
               <CDBSidebarMenuItem>Crear Usuario</CDBSidebarMenuItem>
             </div>
           </CDBSidebarMenu>
