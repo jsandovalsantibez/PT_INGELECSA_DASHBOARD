@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { onAuthStateChanged, signOut } from "firebase/auth";
-import { useNavigate } from 'react-router-dom'; // Importa useNavigate
+import { useNavigate } from 'react-router-dom'; 
 import { auth, firestore } from '../firebase';
 import { doc, getDoc } from "firebase/firestore";
 import Sidebar from '../components/sideBar';
@@ -8,12 +8,13 @@ import Header from './Header';
 import Profile from './Profile';
 import TaskCardsList from '../components/TaskCardsList';
 import CreateTaskCard from '../components/CreateTaskCard';
+import HolaMundo from '../components/HolaMundo'; // Importa la vista HolaMundo
 
 const Dashboard: React.FC = () => {
   const [user, setUser] = useState<any>(null);
   const [role, setRole] = useState<string>('');
-  const [activeView, setActiveView] = useState<string>('taskcardlist'); // Estado para manejar la vista activa
-  const navigate = useNavigate(); // Inicializa el hook useNavigate
+  const [activeView, setActiveView] = useState<string>('taskcardlist'); 
+  const navigate = useNavigate(); 
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
@@ -40,7 +41,7 @@ const Dashboard: React.FC = () => {
     try {
       await signOut(auth);
       alert("Sesión cerrada con éxito");
-      navigate('/'); // Redirige a la pantalla de bienvenida después de cerrar sesión
+      navigate('/'); 
     } catch (error) {
       console.error("Error al cerrar sesión:", error);
     }
@@ -54,6 +55,8 @@ const Dashboard: React.FC = () => {
         return <TaskCardsList userRole={role} />;
       case 'createtask':
         return <CreateTaskCard />;
+      case 'holamundo': // Añadido para manejar la vista HolaMundo
+        return <HolaMundo />;
       default:
         return <TaskCardsList userRole={role} />;
     }
@@ -64,18 +67,12 @@ const Dashboard: React.FC = () => {
   }
 
   return (
-    <div className="d-flex">
+    <div className="d-flex" style={{ height: '100vh', overflow: 'hidden' }}>
       <Sidebar setActiveView={setActiveView} handleLogout={handleLogout} />
-      <div className="flex-grow-1">
+      <div className="flex-grow-1 d-flex flex-column">
         <Header />
-        <div className="p-4">
-          <h1>Gestión de Trabajos y Mantenciones</h1>
-          <hr />
-          
-          {/* Contenedor con scrollbar para el contenido */}
-          <div style={{ maxHeight: '70vh', overflowY: 'auto' }}>
-            {renderActiveView()}
-          </div>
+        <div className="flex-grow-1" style={{ overflowY: 'auto' }}>
+          {renderActiveView()}
         </div>
       </div>
     </div>

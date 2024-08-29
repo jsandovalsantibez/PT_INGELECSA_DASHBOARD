@@ -11,7 +11,7 @@ import { Button } from 'react-bootstrap';
 
 interface SidebarProps {
   setActiveView: (view: string) => void;
-  handleLogout: () => void; // Añadimos la función de logout como prop
+  handleLogout: () => void;
 }
 
 const Sidebar: React.FC<SidebarProps> = ({ setActiveView, handleLogout }) => {
@@ -25,8 +25,8 @@ const Sidebar: React.FC<SidebarProps> = ({ setActiveView, handleLogout }) => {
         className=""
         breakpoint={768}
         toggled={false}
-        minWidth={collapsed ? "60px" : "150px"} // Ajuste del ancho cuando está colapsada
-        maxWidth={collapsed ? "60px" : "150px"} // Ajuste del ancho cuando no está colapsada
+        minWidth={collapsed ? "60px" : "150px"}
+        maxWidth={collapsed ? "60px" : "150px"}
       >
         <CDBSidebarHeader 
           prefix={<i className="fa fa-bars fa-large" onClick={() => setCollapsed(!collapsed)}></i>}
@@ -46,6 +46,9 @@ const Sidebar: React.FC<SidebarProps> = ({ setActiveView, handleLogout }) => {
             </div>
             <div onClick={() => setActiveView('createtask')}>
               <CDBSidebarMenuItem>Create Task</CDBSidebarMenuItem>
+            </div>
+            <div onClick={() => setActiveView('holamundo')}> {/* Botón siempre visible */}
+              <CDBSidebarMenuItem>Crear Usuario</CDBSidebarMenuItem>
             </div>
           </CDBSidebarMenu>
         </CDBSidebarContent>

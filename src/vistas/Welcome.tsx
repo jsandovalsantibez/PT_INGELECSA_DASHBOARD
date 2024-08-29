@@ -1,6 +1,6 @@
 import React from 'react';
 import Header from './Header';
-import Footer from './Footer';
+import Footer from '../components/Footer';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import { Carousel, Button, Card } from 'react-bootstrap';
 import { Link } from 'react-router-dom';

@@ -18,9 +18,9 @@ const TaskCardsList: React.FC<{ userRole: string }> = ({ userRole }) => {
       let q;
 
       if (userRole === 'gerente_operaciones') {
-        q = collection(db, "taskCards");
+        q = query(collection(db, "taskCards"), where("active", "==", true)); // Solo tareas activas
       } else {
-        q = query(collection(db, "taskCards"), where("assignedTo", "==", auth.currentUser?.uid));
+        q = query(collection(db, "taskCards"), where("assignedTo", "==", auth.currentUser?.uid), where("active", "==", true));
       }
 
       try {

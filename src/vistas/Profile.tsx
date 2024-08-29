@@ -1,18 +1,13 @@
-import { useEffect, useState } from 'react';
-import { auth } from '../firebase'; 
+import React, { useState } from 'react';
+import { useAuth } from '../components/AuthContext'; // Importa el hook personalizado
 import UploadProfileImage from '../components/UploadProfileImage'; 
 
-const Profile = () => {
-  const [photoURL, setPhotoURL] = useState<string | null>(null);
+const Profile: React.FC = () => {
+  const { user } = useAuth();  // Obtén el usuario desde el contexto
+  const [photoURL, setPhotoURL] = useState<string | null>(user?.photoURL || null);
   const [showSettings, setShowSettings] = useState(false);
   const [showUploadImage, setShowUploadImage] = useState(false);
   const [confirmChangeImage, setConfirmChangeImage] = useState(false);
-
-  useEffect(() => {
-    if (auth.currentUser) {
-      setPhotoURL(auth.currentUser.photoURL);
-    }
-  }, []);
 
   const handleSettingsClick = () => {
     setShowSettings(!showSettings);
@@ -52,8 +47,8 @@ const Profile = () => {
         <p>No hay imagen de perfil</p>
       )}
       
-      <p>Nombre: {auth.currentUser?.displayName || 'Sin nombre'}</p>
-      <p>Email: {auth.currentUser?.email}</p>
+      <p>Nombre: {user?.displayName || 'Sin nombre'}</p>
+      <p>Email: {user?.email}</p>
 
       {/* Botón de configuración */}
       <button onClick={handleSettingsClick}>
