@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc } from "firebase/firestore";
 import { Form, Button, Col, Row, ListGroup, Dropdown, Container, ButtonGroup, Modal } from 'react-bootstrap';
+import { useNavigate } from 'react-router-dom';  // Importa useNavigate para la redirección
 import { BsThreeDotsVertical } from 'react-icons/bs';
 
 const CreateTaskCard: React.FC = () => {
@@ -18,6 +19,8 @@ const CreateTaskCard: React.FC = () => {
   
   const [showModal, setShowModal] = useState(false);
   const [selectedTask, setSelectedTask] = useState<any>(null);
+
+  const navigate = useNavigate();  // Instancia de useNavigate
 
   const placesByCategory: { [key: string]: string[] } = {
     homecenter: ["Estación Central", "Independencia", "El Bosque"],
@@ -53,7 +56,8 @@ const CreateTaskCard: React.FC = () => {
     const db = getFirestore();
 
     try {
-      await addDoc(collection(db, "taskCards"), {
+      const docRef = await addDoc(collection(db, "taskCards"), {
+        placeCategory, 
         place,
         date,
         checkInTime,
@@ -66,6 +70,7 @@ const CreateTaskCard: React.FC = () => {
         active: false,
       });
       alert("Card creada con éxito!");
+
       setPlaceCategory('');
       setPlace('');
       setDate('');
@@ -76,7 +81,11 @@ const CreateTaskCard: React.FC = () => {
       setAssignedPersonnel('');
       setTools('');
       setMaintenanceType('');
+
       fetchTasks();
+
+      // Redirige a la vista de creación de plan utilizando el ID de la nueva tarea
+      navigate(`/dashboard/taskplan/${docRef.id}`);
     } catch (error) {
       console.error("Error al crear la card: ", error);
     }
@@ -98,6 +107,10 @@ const CreateTaskCard: React.FC = () => {
   const handleShowDetails = (task: any) => {
     setSelectedTask(task);
     setShowModal(true);
+  };
+
+  const handleCreatePlan = (taskId: string) => {
+    navigate(`/dashboard/taskplan/${taskId}`);
   };
 
   const handleCloseModal = () => setShowModal(false);
@@ -253,11 +266,11 @@ const CreateTaskCard: React.FC = () => {
             {tasks.map(task => (
               <ListGroup.Item key={task.id} className="d-flex justify-content-between align-items-center">
                 <div>
-                  {task.place} - {task.date}
+                  {`${task.placeCategory} - ${task.place}`} - {task.date}
                 </div>
                 <div className="d-flex align-items-center" style={{ marginLeft: 'auto' }}>
                   <ButtonGroup className="me-2">
-                    <Button variant="outline-primary">Crear Plan</Button>
+                    <Button variant="outline-primary" onClick={() => handleCreatePlan(task.id)}>Crear Plan</Button>
                     <Button variant="outline-info" onClick={() => handleShowDetails(task)}>Ver Detalles</Button>
                   </ButtonGroup>
                   <Dropdown align="end">
@@ -284,8 +297,15 @@ const CreateTaskCard: React.FC = () => {
           {selectedTask && (
             <>
               <h5>{selectedTask.place}</h5>
+              <p>Categoría: {selectedTask.placeCategory}</p>
               <p>Fecha: {selectedTask.date}</p>
+              <p>Hora de Ingreso: {selectedTask.checkInTime}</p>
+              <p>Hora de Salida: {selectedTask.checkOutTime}</p>
               <p>Persona de contacto: {selectedTask.contactPerson}</p>
+              <p>Número de contacto: {selectedTask.contactNumber}</p>
+              <p>Personal Designado: {selectedTask.assignedPersonnel}</p>
+              <p>Herramientas: {selectedTask.tools}</p>
+              <p>Tipo de Mantenimiento: {selectedTask.maintenanceType}</p>
               <p>Detalles adicionales: {selectedTask.details || 'No disponibles'}</p>
             </>
           )}
@@ -293,6 +313,9 @@ const CreateTaskCard: React.FC = () => {
         <Modal.Footer>
           <Button variant="secondary" onClick={handleCloseModal}>
             Cerrar
+          </Button>
+          <Button variant="primary">
+            Editar
           </Button>
         </Modal.Footer>
       </Modal>

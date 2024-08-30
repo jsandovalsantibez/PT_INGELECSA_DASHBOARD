@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { onAuthStateChanged, signOut } from "firebase/auth";
-import { useNavigate } from 'react-router-dom'; 
+import { useNavigate, useParams } from 'react-router-dom';
 import { auth, firestore } from '../firebase';
 import { doc, getDoc } from "firebase/firestore";
 import Sidebar from '../components/sideBar';
@@ -8,12 +8,14 @@ import Header from './Header';
 import Profile from './Profile';
 import TaskCardsList from '../components/TaskCardsList';
 import CreateTaskCard from '../components/CreateTaskCard';
-import HolaMundo from '../components/CreateUser'; // Importa la vista HolaMundo
+import HolaMundo from '../components/CreateUser';
+import TaskPlan from '../components/TaskPlan'; // Importa la vista TaskPlan
 
 const Dashboard: React.FC = () => {
   const [user, setUser] = useState<any>(null);
   const [role, setRole] = useState<string>('');
   const [activeView, setActiveView] = useState<string>('taskcardlist'); 
+  const { taskId } = useParams<{ taskId: string }>();  // Para obtener el ID de la tarea desde la URL
   const navigate = useNavigate(); 
 
   useEffect(() => {
@@ -57,10 +59,13 @@ const Dashboard: React.FC = () => {
         return <CreateTaskCard />;
       case 'createuser':
         return <HolaMundo />;
+      case 'taskplan':  // Nueva vista para TaskPlan
+        return <TaskPlan taskId={taskId || ''} />; // Asegúrate de pasar taskId, usa una cadena vacía si es undefined
       default:
         return <TaskCardsList userRole={role} />;
     }
   };
+  
 
   if (!user) {
     return <div>Loading...</div>;
