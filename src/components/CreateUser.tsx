@@ -66,10 +66,9 @@ const CreateUser: React.FC = () => {
   };
 
   return (
-    <Container>
-      <Row className="justify-content-center">
+    <Container fluid>
+      <Row>
         <Col md={6}>
-          <h1 className="text-center">Hola Mundo</h1>
           <h2 className="text-center mb-4">Crear Nuevo Usuario</h2>
           {error && <Alert variant="danger">{error}</Alert>}
           <Form onSubmit={handleCreateUser}>
@@ -129,17 +128,17 @@ const CreateUser: React.FC = () => {
             </Form.Group>
 
             <Form.Group controlId="formImage" className="mb-3">
-                <Form.Label>Imagen de Perfil</Form.Label>
-                <Form.Control
-                    type="file"
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                    if (e.target.files && e.target.files.length > 0) {
-                        setImage(e.target.files[0]);
-                    } else {
-                        setImage(null);
-                    }
-                    }}
-                />
+              <Form.Label>Imagen de Perfil</Form.Label>
+              <Form.Control
+                type="file"
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                  if (e.target.files && e.target.files.length > 0) {
+                    setImage(e.target.files[0]);
+                  } else {
+                    setImage(null);
+                  }
+                }}
+              />
             </Form.Group>
 
             <Button variant="primary" type="submit" className="w-100">
@@ -147,8 +146,10 @@ const CreateUser: React.FC = () => {
             </Button>
           </Form>
         </Col>
+        <Col md={6}>
+          <UsersImg /> {/* Renderizado del componente que muestra las imágenes */}
+        </Col>
       </Row>
-      <UsersImg /> {/* Renderizado del componente que muestra las imágenes */}
     </Container>
   );
 };

@@ -6,6 +6,7 @@ import Col from 'react-bootstrap/Col';
 import Button from 'react-bootstrap/Button';
 import Modal from 'react-bootstrap/Modal';
 import { auth } from '../firebase';
+import UserList from './UserList'; // Importar el componente UserList
 
 const TaskCardsList: React.FC<{ userRole: string }> = ({ userRole }) => {
   const [taskCards, setTaskCards] = useState<any[]>([]);
@@ -49,24 +50,32 @@ const TaskCardsList: React.FC<{ userRole: string }> = ({ userRole }) => {
   const handleCloseModal = () => setShowModal(false);
 
   return (
-    <div style={{ backgroundColor: '#1a2b4c', minHeight: '100vh', padding: '20px' }}>
-      <Row xs={1} md={3} className="g-3" style={{ marginRight: 0, marginLeft: 0 }}>
-        {taskCards.map(card => (
-          <Col key={card.id}>
-            <Card style={{ 
-              margin: '0.5rem', 
-              minHeight: '200px',
-              backgroundColor: '#f8f9fa', // Fondo gris claro
-            }}>
-              <Card.Body className="d-flex flex-column justify-content-center align-items-center" style={{ color: 'black' }}>
-                <Card.Title>{card.place}</Card.Title>
-                <Card.Text>{card.date}</Card.Text>
-                <Button variant="primary" onClick={() => handleShowDetails(card)}>Ver detalles</Button>
-              </Card.Body>
-            </Card>
-          </Col>
-        ))}
-      </Row>
+    <Row style={{ backgroundColor: '#1a2b4c', minHeight: '100vh', padding: '20px' }}>
+      {/* Columna para las Task Cards */}
+      <Col md={8}>
+        <Row xs={1} md={2} className="g-3">
+          {taskCards.map(card => (
+            <Col key={card.id}>
+              <Card style={{ 
+                margin: '0.5rem', 
+                minHeight: '200px',
+                backgroundColor: '#f8f9fa', 
+              }}>
+                <Card.Body className="d-flex flex-column justify-content-center align-items-center" style={{ color: 'black' }}>
+                  <Card.Title>{card.place}</Card.Title>
+                  <Card.Text>{card.date}</Card.Text>
+                  <Button variant="primary" onClick={() => handleShowDetails(card)}>Ver detalles</Button>
+                </Card.Body>
+              </Card>
+            </Col>
+          ))}
+        </Row>
+      </Col>
+
+      {/* Columna para la lista de usuarios */}
+      <Col md={4}>
+        <UserList />
+      </Col>
 
       <Modal show={showModal} onHide={handleCloseModal}>
         <Modal.Header closeButton>
@@ -88,7 +97,7 @@ const TaskCardsList: React.FC<{ userRole: string }> = ({ userRole }) => {
           </Button>
         </Modal.Footer>
       </Modal>
-    </div>
+    </Row>
   );
 };
 
