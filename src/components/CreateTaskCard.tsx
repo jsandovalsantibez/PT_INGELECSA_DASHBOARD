@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc } from "firebase/firestore";
+import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, updateDoc } from "firebase/firestore";
 import { Form, Button, Col, Row, ListGroup, Dropdown, Container, ButtonGroup, Modal } from 'react-bootstrap';
-import { useNavigate } from 'react-router-dom';  // Importa useNavigate para la redirección
+import { useNavigate } from 'react-router-dom'; 
 import { BsThreeDotsVertical } from 'react-icons/bs';
+
+import { FormControlElement } from 'react-bootstrap';
 
 const CreateTaskCard: React.FC = () => {
   const [placeCategory, setPlaceCategory] = useState('');
@@ -19,8 +21,10 @@ const CreateTaskCard: React.FC = () => {
   
   const [showModal, setShowModal] = useState(false);
   const [selectedTask, setSelectedTask] = useState<any>(null);
+  const [isEditing, setIsEditing] = useState(false); 
+  const [editedTask, setEditedTask] = useState<any>(null); 
 
-  const navigate = useNavigate();  // Instancia de useNavigate
+  const navigate = useNavigate(); 
 
   const placesByCategory: { [key: string]: string[] } = {
     homecenter: ["Estación Central", "Independencia", "El Bosque"],
@@ -49,6 +53,14 @@ const CreateTaskCard: React.FC = () => {
   useEffect(() => {
     fetchTasks();
   }, []);
+
+  const handleChange = (e: any) => {
+    const { name, value } = e.target;
+    setEditedTask((prevTask: any) => ({
+        ...prevTask,
+        [name]: value,
+    }));
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -84,7 +96,6 @@ const CreateTaskCard: React.FC = () => {
 
       fetchTasks();
 
-      // Redirige a la vista de creación de plan utilizando el ID de la nueva tarea
       navigate(`/dashboard/taskplan/${docRef.id}`);
     } catch (error) {
       console.error("Error al crear la card: ", error);
@@ -107,13 +118,37 @@ const CreateTaskCard: React.FC = () => {
   const handleShowDetails = (task: any) => {
     setSelectedTask(task);
     setShowModal(true);
+    setIsEditing(false); 
+  };
+
+  const handleEditTask = (task: any) => {
+    setIsEditing(true);
+    setEditedTask({ ...task });
+    setShowModal(true);
+  };
+
+  const handleSaveChanges = async () => {
+    try {
+      const db = getFirestore();
+      const taskRef = doc(db, 'taskCards', editedTask.id);
+      await updateDoc(taskRef, editedTask);
+      alert('Tarea actualizada con éxito!');
+      setShowModal(false);
+      setIsEditing(false);
+      fetchTasks();
+    } catch (error) {
+      console.error('Error al actualizar la tarea:', error);
+    }
   };
 
   const handleCreatePlan = (taskId: string) => {
     navigate(`/dashboard/taskplan/${taskId}`);
   };
 
-  const handleCloseModal = () => setShowModal(false);
+  const handleCloseModal = () => {
+    setShowModal(false);
+    setIsEditing(false); 
+  };
 
   return (
     <Container fluid>
@@ -167,6 +202,7 @@ const CreateTaskCard: React.FC = () => {
                   value={date}
                   onChange={e => setDate(e.target.value)}
                   required
+                  name="date"
                 />
               </Form.Group>
 
@@ -177,6 +213,7 @@ const CreateTaskCard: React.FC = () => {
                   value={checkInTime}
                   onChange={e => setCheckInTime(e.target.value)}
                   required
+                  name="checkInTime"
                 />
               </Form.Group>
 
@@ -187,6 +224,7 @@ const CreateTaskCard: React.FC = () => {
                   value={checkOutTime}
                   onChange={e => setCheckOutTime(e.target.value)}
                   required
+                  name="checkOutTime"
                 />
               </Form.Group>
             </Row>
@@ -200,6 +238,7 @@ const CreateTaskCard: React.FC = () => {
                   value={contactPerson}
                   onChange={e => setContactPerson(e.target.value)}
                   required
+                  name="contactPerson"
                 />
               </Form.Group>
 
@@ -211,6 +250,7 @@ const CreateTaskCard: React.FC = () => {
                   value={contactNumber}
                   onChange={e => setContactNumber(e.target.value)}
                   required
+                  name="contactNumber"
                 />
               </Form.Group>
             </Row>
@@ -224,6 +264,7 @@ const CreateTaskCard: React.FC = () => {
                   value={assignedPersonnel}
                   onChange={e => setAssignedPersonnel(e.target.value)}
                   required
+                  name="assignedPersonnel"
                 />
               </Form.Group>
 
@@ -235,6 +276,7 @@ const CreateTaskCard: React.FC = () => {
                   value={tools}
                   onChange={e => setTools(e.target.value)}
                   required
+                  name="tools"
                 />
               </Form.Group>
             </Row>
@@ -247,6 +289,7 @@ const CreateTaskCard: React.FC = () => {
                   value={maintenanceType}
                   onChange={e => setMaintenanceType(e.target.value)}
                   required
+                  name="maintenanceType"
                 >
                   <option value="" disabled>Seleccione un tipo de mantenimiento</option>
                   {maintenanceTypes.map((type) => (
@@ -279,6 +322,7 @@ const CreateTaskCard: React.FC = () => {
                     </Dropdown.Toggle>
                     <Dropdown.Menu>
                       <Dropdown.Item onClick={() => handleDeleteTask(task.id)}>Borrar Tarea</Dropdown.Item>
+                      <Dropdown.Item onClick={() => handleEditTask(task)}>Editar Tarea</Dropdown.Item>
                     </Dropdown.Menu>
                   </Dropdown>
                 </div>
@@ -288,37 +332,167 @@ const CreateTaskCard: React.FC = () => {
         </Col>
       </Row>
 
-      {/* Modal para ver detalles */}
+      {/* Modal para ver detalles y editar */}
       <Modal show={showModal} onHide={handleCloseModal}>
         <Modal.Header closeButton>
-          <Modal.Title>Detalles de la Tarea</Modal.Title>
+          <Modal.Title>{isEditing ? 'Editar Tarea' : 'Detalles de la Tarea'}</Modal.Title>
         </Modal.Header>
         <Modal.Body>
           {selectedTask && (
             <>
-              <h5>{selectedTask.place}</h5>
-              <p>Categoría: {selectedTask.placeCategory}</p>
-              <p>Fecha: {selectedTask.date}</p>
-              <p>Hora de Ingreso: {selectedTask.checkInTime}</p>
-              <p>Hora de Salida: {selectedTask.checkOutTime}</p>
-              <p>Persona de contacto: {selectedTask.contactPerson}</p>
-              <p>Número de contacto: {selectedTask.contactNumber}</p>
-              <p>Personal Designado: {selectedTask.assignedPersonnel}</p>
-              <p>Herramientas: {selectedTask.tools}</p>
-              <p>Tipo de Mantenimiento: {selectedTask.maintenanceType}</p>
-              <p>Detalles adicionales: {selectedTask.details || 'No disponibles'}</p>
+              {isEditing ? (
+                <>
+                  <Form.Group as={Col} md="12">
+                    <Form.Label>Categoría del Lugar</Form.Label>
+                    <Form.Control
+                      as="select"
+                      name="placeCategory"
+                      value={editedTask?.placeCategory || ''}
+                      onChange={handleChange}
+                    >
+                      <option value="" disabled>Seleccione una categoría</option>
+                      {Object.keys(placesByCategory).map((category) => (
+                        <option key={category} value={category}>{category}</option>
+                      ))}
+                    </Form.Control>
+                  </Form.Group>
+
+                  <Form.Group as={Col} md="12">
+                    <Form.Label>Lugar</Form.Label>
+                    <Form.Control
+                      as="select"
+                      name="place"
+                      value={editedTask?.place || ''}
+                      onChange={handleChange}
+                      disabled={!editedTask?.placeCategory}
+                    >
+                      <option value="" disabled>Seleccione un lugar</option>
+                      {editedTask?.placeCategory && placesByCategory[editedTask.placeCategory]?.map((placeOption) => (
+                        <option key={placeOption} value={placeOption}>{placeOption}</option>
+                      ))}
+                    </Form.Control>
+                  </Form.Group>
+
+                  <Form.Group as={Col} md="12">
+                    <Form.Label>Fecha</Form.Label>
+                    <Form.Control
+                      type="date"
+                      name="date"
+                      value={editedTask?.date || ''}
+                      onChange={handleChange}
+                    />
+                  </Form.Group>
+
+                  <Form.Group as={Col} md="12">
+                    <Form.Label>Hora de Ingreso</Form.Label>
+                    <Form.Control
+                      type="time"
+                      name="checkInTime"
+                      value={editedTask?.checkInTime || ''}
+                      onChange={handleChange}
+                    />
+                  </Form.Group>
+
+                  <Form.Group as={Col} md="12">
+                    <Form.Label>Hora de Salida</Form.Label>
+                    <Form.Control
+                      type="time"
+                      name="checkOutTime"
+                      value={editedTask?.checkOutTime || ''}
+                      onChange={handleChange}
+                    />
+                  </Form.Group>
+
+                  <Form.Group as={Col} md="12">
+                    <Form.Label>Persona de Contacto</Form.Label>
+                    <Form.Control
+                      type="text"
+                      name="contactPerson"
+                      value={editedTask?.contactPerson || ''}
+                      onChange={handleChange}
+                    />
+                  </Form.Group>
+
+                  <Form.Group as={Col} md="12">
+                    <Form.Label>Número de Contacto</Form.Label>
+                    <Form.Control
+                      type="text"
+                      name="contactNumber"
+                      value={editedTask?.contactNumber || ''}
+                      onChange={handleChange}
+                    />
+                  </Form.Group>
+
+                  <Form.Group as={Col} md="12">
+                    <Form.Label>Personal Designado</Form.Label>
+                    <Form.Control
+                      type="text"
+                      name="assignedPersonnel"
+                      value={editedTask?.assignedPersonnel || ''}
+                      onChange={handleChange}
+                    />
+                  </Form.Group>
+
+                  <Form.Group as={Col} md="12">
+                    <Form.Label>Herramientas</Form.Label>
+                    <Form.Control
+                      type="text"
+                      name="tools"
+                      value={editedTask?.tools || ''}
+                      onChange={handleChange}
+                    />
+                  </Form.Group>
+
+                  <Form.Group as={Col} md="12">
+                    <Form.Label>Tipo de Mantenimiento</Form.Label>
+                    <Form.Control
+                      as="select"
+                      name="maintenanceType"
+                      value={editedTask?.maintenanceType || ''}
+                      onChange={handleChange}
+                    >
+                      <option value="" disabled>Seleccione un tipo de mantenimiento</option>
+                      {maintenanceTypes.map((type) => (
+                        <option key={type.value} value={type.value}>
+                          {type.label}
+                        </option>
+                      ))}
+                    </Form.Control>
+                  </Form.Group>
+                </>
+              ) : (
+                <>
+                  <h5>{selectedTask.place}</h5>
+                  <p>Categoría: {selectedTask.placeCategory}</p>
+                  <p>Fecha: {selectedTask.date}</p>
+                  <p>Hora de Ingreso: {selectedTask.checkInTime}</p>
+                  <p>Hora de Salida: {selectedTask.checkOutTime}</p>
+                  <p>Persona de contacto: {selectedTask.contactPerson}</p>
+                  <p>Número de contacto: {selectedTask.contactNumber}</p>
+                  <p>Personal Designado: {selectedTask.assignedPersonnel}</p>
+                  <p>Herramientas: {selectedTask.tools}</p>
+                  <p>Tipo de Mantenimiento: {selectedTask.maintenanceType}</p>
+                </>
+              )}
             </>
           )}
         </Modal.Body>
         <Modal.Footer>
           <Button variant="secondary" onClick={handleCloseModal}>
-            Cerrar
+            {isEditing ? 'Cancelar' : 'Cerrar'}
           </Button>
-          <Button variant="primary">
-            Editar
-          </Button>
+          {isEditing ? (
+            <Button variant="primary" onClick={handleSaveChanges}>
+              Guardar Cambios
+            </Button>
+          ) : (
+            <Button variant="primary" onClick={() => handleEditTask(selectedTask)}>
+              Editar
+            </Button>
+          )}
         </Modal.Footer>
       </Modal>
+
     </Container>
   );
 };
