@@ -3,8 +3,7 @@ import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, updateDoc } 
 import { Form, Button, Col, Row, ListGroup, Dropdown, Container, ButtonGroup, Modal } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom'; 
 import { BsThreeDotsVertical } from 'react-icons/bs';
-
-import { FormControlElement } from 'react-bootstrap';
+import { auth } from '../firebase';
 
 const CreateTaskCard: React.FC = () => {
   const [placeCategory, setPlaceCategory] = useState('');
@@ -14,7 +13,7 @@ const CreateTaskCard: React.FC = () => {
   const [checkOutTime, setCheckOutTime] = useState('');
   const [contactPerson, setContactPerson] = useState('');
   const [contactNumber, setContactNumber] = useState('');
-  const [assignedPersonnel, setAssignedPersonnel] = useState('');
+  const [assignedPersonnel, setAssignedPersonnel] = useState<string[]>([]);
   const [tools, setTools] = useState('');
   const [maintenanceType, setMaintenanceType] = useState('');
   const [tasks, setTasks] = useState<any[]>([]);
@@ -62,6 +61,13 @@ const CreateTaskCard: React.FC = () => {
     }));
   };
 
+  const handlePersonnelChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { value, checked } = e.target;
+    setAssignedPersonnel(prev =>
+      checked ? [...prev, value] : prev.filter(person => person !== value)
+    );
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -90,7 +96,7 @@ const CreateTaskCard: React.FC = () => {
       setCheckOutTime('');
       setContactPerson('');
       setContactNumber('');
-      setAssignedPersonnel('');
+      setAssignedPersonnel([]);
       setTools('');
       setMaintenanceType('');
 
@@ -258,14 +264,19 @@ const CreateTaskCard: React.FC = () => {
             <Row className="mb-2">
               <Form.Group as={Col} md="6">
                 <Form.Label>Personal Designado</Form.Label>
-                <Form.Control
-                  type="text"
-                  placeholder="Ingrese el personal designado"
-                  value={assignedPersonnel}
-                  onChange={e => setAssignedPersonnel(e.target.value)}
-                  required
-                  name="assignedPersonnel"
-                />
+                <div>
+                  {assignedPersonnel.map((personnel, index) => (
+                    <div key={index} style={{ marginBottom: '5px' }}>
+                      <Form.Check
+                        type="checkbox"
+                        label={personnel}
+                        value={personnel}
+                        checked={true}
+                        onChange={handlePersonnelChange}
+                      />
+                    </div>
+                  ))}
+                </div>
               </Form.Group>
 
               <Form.Group as={Col} md="6">

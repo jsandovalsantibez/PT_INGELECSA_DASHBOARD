@@ -4,9 +4,10 @@ import Card from 'react-bootstrap/Card';
 import Row from 'react-bootstrap/Row';
 import Col from 'react-bootstrap/Col';
 import Button from 'react-bootstrap/Button';
+import Badge from 'react-bootstrap/Badge';
 import Modal from 'react-bootstrap/Modal';
 import { auth } from '../firebase';
-import UserList from './UserList'; // Importar el componente UserList
+import UserList from './UserList';
 
 const TaskCardsList: React.FC<{ userRole: string }> = ({ userRole }) => {
   const [taskCards, setTaskCards] = useState<any[]>([]);
@@ -21,7 +22,9 @@ const TaskCardsList: React.FC<{ userRole: string }> = ({ userRole }) => {
       if (userRole === 'gerente_operaciones') {
         q = query(collection(db, "taskCards"), where("active", "==", true)); // Solo tareas activas
       } else {
-        q = query(collection(db, "taskCards"), where("assignedTo", "==", auth.currentUser?.uid), where("active", "==", true));
+        q = query(collection(db, "taskCards"), 
+            where("active", "==", true), 
+            where("assignedPersonnel", "array-contains", auth.currentUser?.uid)); 
       }
 
       try {
@@ -64,7 +67,14 @@ const TaskCardsList: React.FC<{ userRole: string }> = ({ userRole }) => {
                 <Card.Body className="d-flex flex-column justify-content-center align-items-center" style={{ color: 'black' }}>
                   <Card.Title>{card.place}</Card.Title>
                   <Card.Text>{card.date}</Card.Text>
-                  <Button variant="primary" onClick={() => handleShowDetails(card)}>Ver detalles</Button>
+                  <div className="d-flex align-items-center">
+                    <Button variant="primary" onClick={() => handleShowDetails(card)}>Ver detalles</Button>
+                    {card.assignedPersonnel && card.assignedPersonnel.length > 0 && (
+                      <Badge pill bg="info" className="ms-2">
+                        {card.assignedPersonnel.length > 3 ? '3+' : card.assignedPersonnel.length}
+                      </Badge>
+                    )}
+                  </div>
                 </Card.Body>
               </Card>
             </Col>
@@ -85,8 +95,15 @@ const TaskCardsList: React.FC<{ userRole: string }> = ({ userRole }) => {
           {selectedTask && (
             <>
               <h5>{selectedTask.place}</h5>
+              <p>Categoría: {selectedTask.placeCategory}</p>
               <p>Fecha: {selectedTask.date}</p>
+              <p>Hora de Ingreso: {selectedTask.checkInTime}</p>
+              <p>Hora de Salida: {selectedTask.checkOutTime}</p>
               <p>Persona de contacto: {selectedTask.contactPerson}</p>
+              <p>Número de contacto: {selectedTask.contactNumber}</p>
+              <p>Personal Designado: {selectedTask.assignedPersonnel.join(', ')}</p>
+              <p>Herramientas: {selectedTask.tools}</p>
+              <p>Tipo de Mantenimiento: {selectedTask.maintenanceType}</p>
               <p>Detalles adicionales: {selectedTask.details || 'No disponibles'}</p>
             </>
           )}
