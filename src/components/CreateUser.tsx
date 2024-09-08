@@ -3,7 +3,7 @@ import { Container, Form, Button, Alert, Row, Col } from 'react-bootstrap';
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
 import { doc, setDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { auth, firestore, storage } from '../firebase';
+import { auth, db, storage } from '../firebase';
 import UsersImg from './UsersImg';  // Asegúrate de que la ruta esté correcta
 
 const CreateUser: React.FC = () => {
@@ -36,7 +36,7 @@ const CreateUser: React.FC = () => {
       }
 
       // 3. Crear un documento en Firestore para el nuevo usuario con su UID
-      await setDoc(doc(firestore, 'users', newUser.uid), {
+      await setDoc(doc(db, 'users', newUser.uid), {
         role: 'tecnico_soporte',
         fullName,
         rut,

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { firestore } from '../firebase';
+import { db } from '../firebase';  // Importamos 'db' en lugar de 'firestore'
 import { collection, getDocs } from 'firebase/firestore';
 import { Row, Col, Card } from 'react-bootstrap';
 
@@ -9,7 +9,7 @@ const UsersImg: React.FC = () => {
   useEffect(() => {
     const fetchUsers = async () => {
       try {
-        const usersCollection = collection(firestore, 'users');
+        const usersCollection = collection(db, 'users');  // Usamos 'db' en lugar de 'firestore'
         const userDocs = await getDocs(usersCollection);
         const usersList = userDocs.docs.map(doc => ({
           id: doc.id,

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import { useNavigate, useParams } from 'react-router-dom';
-import { auth, firestore } from '../firebase';
+import { auth, db } from '../firebase';  // Importa 'db' en lugar de 'firestore'
 import { doc, getDoc } from "firebase/firestore";
 import Sidebar from '../components/sideBar';
 import Header from './Header';
@@ -9,13 +9,14 @@ import Profile from './Profile';
 import TaskCardsList from '../components/TaskCardsList';
 import CreateTaskCard from '../components/CreateTaskCard';
 import HolaMundo from '../components/CreateUser';
-import TaskPlan from '../components/TaskPlan'; // Importa la vista TaskPlan
+import TaskPlan from '../components/TaskPlan'; 
+import TaskForm from '../components/TaskForm';  // Importamos el nuevo formulario
 
 const Dashboard: React.FC = () => {
   const [user, setUser] = useState<any>(null);
   const [role, setRole] = useState<string>('');
   const [activeView, setActiveView] = useState<string>('taskcardlist'); 
-  const { taskId } = useParams<{ taskId: string }>();  // Para obtener el ID de la tarea desde la URL
+  const { taskCode } = useParams<{ taskCode: string }>();  // Se añade taskCode para usarlo en TaskForm
   const navigate = useNavigate(); 
 
   useEffect(() => {
@@ -23,14 +24,13 @@ const Dashboard: React.FC = () => {
       if (currentUser) {
         setUser(currentUser);
         try {
-          const userDocRef = doc(firestore, 'users', currentUser.uid);
+          const userDocRef = doc(db, 'users', currentUser.uid);  // Usa 'db' en lugar de 'firestore'
           const userDoc = await getDoc(userDocRef);
           const userRole = userDoc.data()?.role;
-          const userName = userDoc.data()?.fullName || "Usuario"; // Obtén el nombre completo del usuario
-          
+          const userName = userDoc.data()?.fullName || "Usuario";
+
           console.log("Usuario logueado:", userName);
           console.log(auth.currentUser?.uid);
- // Muestra el nombre del usuario en la consola
 
           setRole(userRole);
         } catch (error) {
@@ -65,8 +65,10 @@ const Dashboard: React.FC = () => {
         return <CreateTaskCard />;
       case 'createuser':
         return <HolaMundo />;
-      case 'taskplan':  // Nueva vista para TaskPlan
-        return <TaskPlan taskId={taskId || ''} />; // Asegúrate de pasar taskId, usa una cadena vacía si es undefined
+      case 'taskplan': 
+        return <TaskPlan taskId={taskCode || ''} />;
+      case 'taskform':  // Nueva vista taskform
+        return <TaskForm />;
       default:
         return <TaskCardsList userRole={role} />;
     }

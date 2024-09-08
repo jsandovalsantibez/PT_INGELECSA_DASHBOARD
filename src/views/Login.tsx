@@ -6,7 +6,7 @@ import Footer from '../components/Footer';
 import { useNavigate } from 'react-router-dom';
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore"; 
-import { auth, firestore } from "../firebase"; 
+import { auth, db } from "../firebase"; 
 
 const Login: React.FC = () => {
   const [email, setEmail] = useState("");
@@ -20,7 +20,7 @@ const Login: React.FC = () => {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
 
-      const userDocRef = doc(firestore, 'users', user.uid);
+      const userDocRef = doc(db, 'users', user.uid);
       const userDoc = await getDoc(userDocRef);
       const role = userDoc.data()?.role;
 

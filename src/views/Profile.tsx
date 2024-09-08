@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../components/AuthContext'; 
-import { firestore, storage } from '../firebase';
-import { doc, getDoc } from 'firebase/firestore';
-import { ref, getDownloadURL } from 'firebase/storage';
+import { db, storage } from '../firebase';  // Importamos 'db' en lugar de 'firestore'
+import { doc, getDoc } from 'firebase/firestore';  // Importamos desde firebase/firestore para Firestore
+import { ref, getDownloadURL } from 'firebase/storage';  // Para acceder a Firebase Storage
 import UploadProfileImage from '../components/UploadProfileImage';
 import { Container, Row, Col, Button, Card, Spinner } from 'react-bootstrap';
 
@@ -22,7 +22,7 @@ const Profile: React.FC = () => {
     const fetchUserProfile = async () => {
       if (user) {
         try {
-          const userDocRef = doc(firestore, 'users', user.uid);
+          const userDocRef = doc(db, 'users', user.uid);  // Usamos 'db' en lugar de 'firestore'
           const userDoc = await getDoc(userDocRef);
           if (userDoc.exists()) {
             const userData = userDoc.data();

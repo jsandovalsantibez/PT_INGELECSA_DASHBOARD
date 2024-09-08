@@ -13,10 +13,11 @@ const CreateTaskCard: React.FC = () => {
   const [checkOutTime, setCheckOutTime] = useState('');
   const [contactPerson, setContactPerson] = useState('');
   const [contactNumber, setContactNumber] = useState('');
-  const [assignedPersonnel, setAssignedPersonnel] = useState<string[]>([]); // Ahora almacenamos UIDs
+  const [assignedPersonnel, setAssignedPersonnel] = useState<string[]>([]);
   const [tools, setTools] = useState('');
   const [maintenanceType, setMaintenanceType] = useState('');
   const [tasks, setTasks] = useState<any[]>([]);
+  const [taskCode, setTaskCode] = useState(''); // Código de la tarea
   
   const [taskPeriod, setTaskPeriod] = useState<[Date | null, Date | null]>([null, null]);  // Periodo de tarea
   const [personnelList, setPersonnelList] = useState<any[]>([]); // Lista de trabajadores
@@ -34,11 +35,40 @@ const CreateTaskCard: React.FC = () => {
   };
 
   const maintenanceTypes = [
-    { value: 'mantencion_preventiva', label: 'Mantención Preventiva', color: 'green' },
-    { value: 'mantencion_correctiva', label: 'Mantención Correctiva', color: 'orange' },
-    { value: 'inspeccion', label: 'Inspección', color: 'blue' },
-    { value: 'emergencia', label: 'Emergencia', color: 'red' },
+    { value: 'mantencion_preventiva', label: 'Mantención Preventiva', code: 'MP', color: 'green' },
+    { value: 'mantencion_correctiva', label: 'Mantención Correctiva', code: 'MC', color: 'orange' },
+    { value: 'inspeccion', label: 'Inspección', code: 'INS', color: 'blue' },
+    { value: 'emergencia', label: 'Emergencia', code: 'EMR', color: 'red' },
   ];
+
+  // Mapa para la nomenclatura de las categorías de lugares
+  const categoryCodeMap: { [key: string]: string } = {
+    homecenter: 'HC',
+    falabella: 'FAB',
+    tottus: 'TOT',
+    ikea: 'IKEA'
+  };
+
+  // Función para generar el código de tarea
+  const generateTaskCode = () => {
+    if (!placeCategory || !place || !date || !maintenanceType) return;
+
+    const categoryCode = categoryCodeMap[placeCategory];
+    const maintenanceCode = maintenanceTypes.find(type => type.value === maintenanceType)?.code;
+
+    const taskDate = new Date(date);
+    const day = String(taskDate.getDate()).padStart(2, '0');
+    const month = taskDate.toLocaleString('default', { month: 'short' }).toUpperCase();
+
+    // Código de tarea basado en los valores seleccionados
+    const newTaskCode = `${categoryCode}_${place.toUpperCase()}_PCII_INGELECSA_${maintenanceCode}_${month}_${day}_1`;
+
+    setTaskCode(newTaskCode); // Guardar el código de la tarea
+  };
+
+  useEffect(() => {
+    generateTaskCode(); // Generar código cada vez que cambie el formulario
+  }, [placeCategory, place, date, maintenanceType]);
 
   const fetchTasks = async () => {
     const db = getFirestore();
@@ -59,7 +89,7 @@ const CreateTaskCard: React.FC = () => {
       const q = collection(db, 'users');
       const personnelDocs = await getDocs(q);
       const personnelList = personnelDocs.docs.map(doc => ({
-        id: doc.id,  // UID del trabajador
+        id: doc.id,
         ...doc.data()
       }));
       setPersonnelList(personnelList);
@@ -70,8 +100,6 @@ const CreateTaskCard: React.FC = () => {
 
   const handlePersonnelChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { value, checked } = e.target;
-    
-    // Ahora guardamos los UIDs en lugar de los nombres
     setAssignedPersonnel(prev =>
       checked ? [...prev, value] : prev.filter(person => person !== value)
     );
@@ -91,10 +119,11 @@ const CreateTaskCard: React.FC = () => {
         checkOutTime,
         contactPerson,
         contactNumber,
-        assignedPersonnel, // Guardamos los UIDs seleccionados
+        assignedPersonnel,
         tools,
         maintenanceType,
-        taskPeriod,  // Guardar el periodo de tarea
+        taskCode, // Guardar el código de la tarea generado
+        taskPeriod,
         active: false,
       });
       alert("Card creada con éxito!");
@@ -110,7 +139,8 @@ const CreateTaskCard: React.FC = () => {
       setAssignedPersonnel([]);
       setTools('');
       setMaintenanceType('');
-      setTaskPeriod([null, null]);  // Restablecer el periodo de tarea
+      setTaskPeriod([null, null]);
+      setTaskCode('');
 
       fetchTasks();
     } catch (error) {
@@ -133,7 +163,7 @@ const CreateTaskCard: React.FC = () => {
 
   const handleShowDetails = (task: any) => {
     setSelectedTask(task);
-    setEditedTask(task); // Establece la tarea seleccionada para edición
+    setEditedTask(task);
     setShowModal(true);
     setIsEditing(false); 
   };
@@ -278,21 +308,19 @@ const CreateTaskCard: React.FC = () => {
               </Form.Group>
             </Row>
 
-            {/* Selección de personal designado */}
             <Form.Group as={Col} md="12">
               <Form.Label>Seleccionar Técnicos de Soporte</Form.Label>
               {personnelList.map(person => (
                 <Form.Check
                   key={person.id}
                   type="checkbox"
-                  label={person.fullName}  // Mostrar el nombre del técnico
-                  value={person.id}  // Guardar el UID del técnico
+                  label={person.fullName}
+                  value={person.id}
                   onChange={handlePersonnelChange}
                 />
               ))}
             </Form.Group>
 
-            {/* Selección del periodo de la tarea */}
             <Form.Group as={Col} md="12">
               <Form.Label>Periodo de la Tarea</Form.Label>
               <DatePicker
@@ -341,16 +369,16 @@ const CreateTaskCard: React.FC = () => {
             <Button type="submit" variant="primary" className="w-100">Crear Tarea</Button>
           </Form>
         </Col>
+
         <Col md={7}>
           <ListGroup className="mt-4">
             {tasks.map(task => (
               <ListGroup.Item key={task.id} className="d-flex justify-content-between align-items-center">
                 <div>
-                  {`${task.placeCategory} - ${task.place}`} - {task.date}
+                  {`${task.taskCode}`} {/* Mostrar el código de la tarea */}
                 </div>
                 <div className="d-flex align-items-center" style={{ marginLeft: 'auto' }}>
                   <ButtonGroup className="me-2">
-                    {/* Botón de detalles */}
                     <Button variant="outline-info" onClick={() => handleShowDetails(task)}>Ver Detalles</Button>
                   </ButtonGroup>
                   <Dropdown align="end">
@@ -369,7 +397,6 @@ const CreateTaskCard: React.FC = () => {
         </Col>
       </Row>
 
-      {/* Modal para ver detalles y editar */}
       <Modal show={showModal} onHide={handleCloseModal}>
         <Modal.Header closeButton>
           <Modal.Title>{isEditing ? 'Editar Tarea' : 'Detalles de la Tarea'}</Modal.Title>
@@ -499,8 +526,9 @@ const CreateTaskCard: React.FC = () => {
                 </>
               ) : (
                 <>
-                  <h5>{selectedTask.place}</h5>
+                  <h5>{selectedTask.taskCode}</h5> {/* Mostrar código generado */}
                   <p>Categoría: {selectedTask.placeCategory}</p>
+                  <p>Lugar: {selectedTask.place}</p>
                   <p>Fecha: {selectedTask.date}</p>
                   <p>Hora de Ingreso: {selectedTask.checkInTime}</p>
                   <p>Hora de Salida: {selectedTask.checkOutTime}</p>

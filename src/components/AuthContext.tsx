@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { onAuthStateChanged, User } from 'firebase/auth';
-import { auth, firestore } from '../firebase';
-import { doc, getDoc } from 'firebase/firestore';
+import { auth, db } from '../firebase';  // Importa 'db' en lugar de 'firestore'
+import { doc, getDoc } from 'firebase/firestore';  // Para interactuar con Firestore
 
 // Define el tipo para el contexto
 interface AuthContextType {
@@ -31,7 +31,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (currentUser) {
         setUser(currentUser);
         try {
-          const userDocRef = doc(firestore, 'users', currentUser.uid);
+          const userDocRef = doc(db, 'users', currentUser.uid);  // Usa 'db' en lugar de 'firestore'
           const userDoc = await getDoc(userDocRef);
           setRole(userDoc.data()?.role || null);
         } catch (error) {
