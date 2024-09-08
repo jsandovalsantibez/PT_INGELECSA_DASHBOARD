@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, updateDoc } from "firebase/firestore";
 import { Form, Button, Col, Row, ListGroup, Dropdown, Container, ButtonGroup, Modal } from 'react-bootstrap';
-import { useNavigate } from 'react-router-dom'; 
 import { BsThreeDotsVertical } from 'react-icons/bs';
-import { auth } from '../firebase';
+import DatePicker from 'react-datepicker';
+import 'react-datepicker/dist/react-datepicker.css';
 
 const CreateTaskCard: React.FC = () => {
   const [placeCategory, setPlaceCategory] = useState('');
@@ -13,17 +13,18 @@ const CreateTaskCard: React.FC = () => {
   const [checkOutTime, setCheckOutTime] = useState('');
   const [contactPerson, setContactPerson] = useState('');
   const [contactNumber, setContactNumber] = useState('');
-  const [assignedPersonnel, setAssignedPersonnel] = useState<string[]>([]);
+  const [assignedPersonnel, setAssignedPersonnel] = useState<string[]>([]); // Ahora almacenamos UIDs
   const [tools, setTools] = useState('');
   const [maintenanceType, setMaintenanceType] = useState('');
   const [tasks, setTasks] = useState<any[]>([]);
   
+  const [taskPeriod, setTaskPeriod] = useState<[Date | null, Date | null]>([null, null]);  // Periodo de tarea
+  const [personnelList, setPersonnelList] = useState<any[]>([]); // Lista de trabajadores
+
   const [showModal, setShowModal] = useState(false);
   const [selectedTask, setSelectedTask] = useState<any>(null);
   const [isEditing, setIsEditing] = useState(false); 
   const [editedTask, setEditedTask] = useState<any>(null); 
-
-  const navigate = useNavigate(); 
 
   const placesByCategory: { [key: string]: string[] } = {
     homecenter: ["Estación Central", "Independencia", "El Bosque"],
@@ -51,18 +52,26 @@ const CreateTaskCard: React.FC = () => {
 
   useEffect(() => {
     fetchTasks();
+    
+    // Obtener la lista de trabajadores
+    const fetchPersonnel = async () => {
+      const db = getFirestore();
+      const q = collection(db, 'users');
+      const personnelDocs = await getDocs(q);
+      const personnelList = personnelDocs.docs.map(doc => ({
+        id: doc.id,  // UID del trabajador
+        ...doc.data()
+      }));
+      setPersonnelList(personnelList);
+    };
+    
+    fetchPersonnel();
   }, []);
-
-  const handleChange = (e: any) => {
-    const { name, value } = e.target;
-    setEditedTask((prevTask: any) => ({
-        ...prevTask,
-        [name]: value,
-    }));
-  };
 
   const handlePersonnelChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { value, checked } = e.target;
+    
+    // Ahora guardamos los UIDs en lugar de los nombres
     setAssignedPersonnel(prev =>
       checked ? [...prev, value] : prev.filter(person => person !== value)
     );
@@ -74,7 +83,7 @@ const CreateTaskCard: React.FC = () => {
     const db = getFirestore();
 
     try {
-      const docRef = await addDoc(collection(db, "taskCards"), {
+      await addDoc(collection(db, "taskCards"), {
         placeCategory, 
         place,
         date,
@@ -82,13 +91,15 @@ const CreateTaskCard: React.FC = () => {
         checkOutTime,
         contactPerson,
         contactNumber,
-        assignedPersonnel,
+        assignedPersonnel, // Guardamos los UIDs seleccionados
         tools,
         maintenanceType,
+        taskPeriod,  // Guardar el periodo de tarea
         active: false,
       });
       alert("Card creada con éxito!");
 
+      // Restablecer el estado del formulario
       setPlaceCategory('');
       setPlace('');
       setDate('');
@@ -99,10 +110,9 @@ const CreateTaskCard: React.FC = () => {
       setAssignedPersonnel([]);
       setTools('');
       setMaintenanceType('');
+      setTaskPeriod([null, null]);  // Restablecer el periodo de tarea
 
       fetchTasks();
-
-      navigate(`/dashboard/taskplan/${docRef.id}`);
     } catch (error) {
       console.error("Error al crear la card: ", error);
     }
@@ -123,17 +133,20 @@ const CreateTaskCard: React.FC = () => {
 
   const handleShowDetails = (task: any) => {
     setSelectedTask(task);
+    setEditedTask(task); // Establece la tarea seleccionada para edición
     setShowModal(true);
     setIsEditing(false); 
   };
 
   const handleEditTask = (task: any) => {
     setIsEditing(true);
-    setEditedTask({ ...task });
+    setEditedTask({ ...task }); // Carga la tarea seleccionada para editarla
     setShowModal(true);
   };
 
   const handleSaveChanges = async () => {
+    if (!editedTask) return;
+
     try {
       const db = getFirestore();
       const taskRef = doc(db, 'taskCards', editedTask.id);
@@ -147,8 +160,12 @@ const CreateTaskCard: React.FC = () => {
     }
   };
 
-  const handleCreatePlan = (taskId: string) => {
-    navigate(`/dashboard/taskplan/${taskId}`);
+  const handleInputChange = (e: any) => {
+    const { name, value } = e.target;
+    setEditedTask((prevTask: any) => ({
+      ...prevTask,
+      [name]: value,
+    }));
   };
 
   const handleCloseModal = () => {
@@ -261,24 +278,35 @@ const CreateTaskCard: React.FC = () => {
               </Form.Group>
             </Row>
 
-            <Row className="mb-2">
-              <Form.Group as={Col} md="6">
-                <Form.Label>Personal Designado</Form.Label>
-                <div>
-                  {assignedPersonnel.map((personnel, index) => (
-                    <div key={index} style={{ marginBottom: '5px' }}>
-                      <Form.Check
-                        type="checkbox"
-                        label={personnel}
-                        value={personnel}
-                        checked={true}
-                        onChange={handlePersonnelChange}
-                      />
-                    </div>
-                  ))}
-                </div>
-              </Form.Group>
+            {/* Selección de personal designado */}
+            <Form.Group as={Col} md="12">
+              <Form.Label>Seleccionar Técnicos de Soporte</Form.Label>
+              {personnelList.map(person => (
+                <Form.Check
+                  key={person.id}
+                  type="checkbox"
+                  label={person.fullName}  // Mostrar el nombre del técnico
+                  value={person.id}  // Guardar el UID del técnico
+                  onChange={handlePersonnelChange}
+                />
+              ))}
+            </Form.Group>
 
+            {/* Selección del periodo de la tarea */}
+            <Form.Group as={Col} md="12">
+              <Form.Label>Periodo de la Tarea</Form.Label>
+              <DatePicker
+                selectsRange
+                startDate={taskPeriod[0] || undefined}
+                endDate={taskPeriod[1] || undefined}
+                onChange={(update: [Date | null, Date | null]) => setTaskPeriod(update)}
+                isClearable={true}
+                dateFormat="dd/MM/yyyy"
+                className="form-control"
+              />
+            </Form.Group>
+
+            <Row className="mb-2">
               <Form.Group as={Col} md="6">
                 <Form.Label>Herramientas</Form.Label>
                 <Form.Control
@@ -290,10 +318,8 @@ const CreateTaskCard: React.FC = () => {
                   name="tools"
                 />
               </Form.Group>
-            </Row>
 
-            <Row className="mb-2">
-              <Form.Group as={Col} md="12">
+              <Form.Group as={Col} md="6">
                 <Form.Label>Tipo de Mantenimiento</Form.Label>
                 <Form.Control
                   as="select"
@@ -312,7 +338,7 @@ const CreateTaskCard: React.FC = () => {
               </Form.Group>
             </Row>
 
-            <Button type="submit" variant="primary" className="w-100">Crear Card</Button>
+            <Button type="submit" variant="primary" className="w-100">Crear Tarea</Button>
           </Form>
         </Col>
         <Col md={7}>
@@ -324,7 +350,7 @@ const CreateTaskCard: React.FC = () => {
                 </div>
                 <div className="d-flex align-items-center" style={{ marginLeft: 'auto' }}>
                   <ButtonGroup className="me-2">
-                    <Button variant="outline-primary" onClick={() => handleCreatePlan(task.id)}>Crear Plan</Button>
+                    {/* Botón de detalles */}
                     <Button variant="outline-info" onClick={() => handleShowDetails(task)}>Ver Detalles</Button>
                   </ButtonGroup>
                   <Dropdown align="end">
@@ -359,7 +385,7 @@ const CreateTaskCard: React.FC = () => {
                       as="select"
                       name="placeCategory"
                       value={editedTask?.placeCategory || ''}
-                      onChange={handleChange}
+                      onChange={handleInputChange}
                     >
                       <option value="" disabled>Seleccione una categoría</option>
                       {Object.keys(placesByCategory).map((category) => (
@@ -374,7 +400,7 @@ const CreateTaskCard: React.FC = () => {
                       as="select"
                       name="place"
                       value={editedTask?.place || ''}
-                      onChange={handleChange}
+                      onChange={handleInputChange}
                       disabled={!editedTask?.placeCategory}
                     >
                       <option value="" disabled>Seleccione un lugar</option>
@@ -390,7 +416,7 @@ const CreateTaskCard: React.FC = () => {
                       type="date"
                       name="date"
                       value={editedTask?.date || ''}
-                      onChange={handleChange}
+                      onChange={handleInputChange}
                     />
                   </Form.Group>
 
@@ -400,7 +426,7 @@ const CreateTaskCard: React.FC = () => {
                       type="time"
                       name="checkInTime"
                       value={editedTask?.checkInTime || ''}
-                      onChange={handleChange}
+                      onChange={handleInputChange}
                     />
                   </Form.Group>
 
@@ -410,7 +436,7 @@ const CreateTaskCard: React.FC = () => {
                       type="time"
                       name="checkOutTime"
                       value={editedTask?.checkOutTime || ''}
-                      onChange={handleChange}
+                      onChange={handleInputChange}
                     />
                   </Form.Group>
 
@@ -420,7 +446,7 @@ const CreateTaskCard: React.FC = () => {
                       type="text"
                       name="contactPerson"
                       value={editedTask?.contactPerson || ''}
-                      onChange={handleChange}
+                      onChange={handleInputChange}
                     />
                   </Form.Group>
 
@@ -430,7 +456,7 @@ const CreateTaskCard: React.FC = () => {
                       type="text"
                       name="contactNumber"
                       value={editedTask?.contactNumber || ''}
-                      onChange={handleChange}
+                      onChange={handleInputChange}
                     />
                   </Form.Group>
 
@@ -440,7 +466,7 @@ const CreateTaskCard: React.FC = () => {
                       type="text"
                       name="assignedPersonnel"
                       value={editedTask?.assignedPersonnel || ''}
-                      onChange={handleChange}
+                      onChange={handleInputChange}
                     />
                   </Form.Group>
 
@@ -450,7 +476,7 @@ const CreateTaskCard: React.FC = () => {
                       type="text"
                       name="tools"
                       value={editedTask?.tools || ''}
-                      onChange={handleChange}
+                      onChange={handleInputChange}
                     />
                   </Form.Group>
 
@@ -460,7 +486,7 @@ const CreateTaskCard: React.FC = () => {
                       as="select"
                       name="maintenanceType"
                       value={editedTask?.maintenanceType || ''}
-                      onChange={handleChange}
+                      onChange={handleInputChange}
                     >
                       <option value="" disabled>Seleccione un tipo de mantenimiento</option>
                       {maintenanceTypes.map((type) => (
@@ -480,7 +506,7 @@ const CreateTaskCard: React.FC = () => {
                   <p>Hora de Salida: {selectedTask.checkOutTime}</p>
                   <p>Persona de contacto: {selectedTask.contactPerson}</p>
                   <p>Número de contacto: {selectedTask.contactNumber}</p>
-                  <p>Personal Designado: {selectedTask.assignedPersonnel}</p>
+                  <p>Personal Designado: {selectedTask.assignedPersonnel.join(', ')}</p>
                   <p>Herramientas: {selectedTask.tools}</p>
                   <p>Tipo de Mantenimiento: {selectedTask.maintenanceType}</p>
                 </>
@@ -503,7 +529,6 @@ const CreateTaskCard: React.FC = () => {
           )}
         </Modal.Footer>
       </Modal>
-
     </Container>
   );
 };

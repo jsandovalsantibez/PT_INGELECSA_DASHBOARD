@@ -26,6 +26,12 @@ const Dashboard: React.FC = () => {
           const userDocRef = doc(firestore, 'users', currentUser.uid);
           const userDoc = await getDoc(userDocRef);
           const userRole = userDoc.data()?.role;
+          const userName = userDoc.data()?.fullName || "Usuario"; // Obtén el nombre completo del usuario
+          
+          console.log("Usuario logueado:", userName);
+          console.log(auth.currentUser?.uid);
+ // Muestra el nombre del usuario en la consola
+
           setRole(userRole);
         } catch (error) {
           console.error('Error obteniendo el rol:', error);
@@ -65,7 +71,6 @@ const Dashboard: React.FC = () => {
         return <TaskCardsList userRole={role} />;
     }
   };
-  
 
   if (!user) {
     return <div>Loading...</div>;
