@@ -1,54 +1,85 @@
 import React, { useEffect, useState } from 'react';
 import { db } from '../firebase';  // Importamos 'db'
-import { collection, getDocs } from 'firebase/firestore';
+import { collection, getDocs, doc, updateDoc } from 'firebase/firestore';
 import { Form, Button, Row, Col, Card } from 'react-bootstrap';
 import { eachDayOfInterval, format } from 'date-fns';  // Para obtener todos los días dentro del rango
+import { useAuth } from '../components/AuthContext';  // Asumiendo que tienes un AuthContext para manejar el usuario
+
+// Definir una interfaz para el objeto de tarea
+interface Task {
+  id: string;
+  panelMarca?: string;
+  lazos?: number;
+  detectorsByLazo?: number[];
+  assignedPersonnel: string[]; // El personal asignado es una lista de IDs de usuario
+  taskPeriod?: { seconds: number }[]; // Asegúrate de que el tipo sea correcto
+  taskCode: string;
+  place: string;
+  date: string;
+}
 
 const TaskForm: React.FC = () => {
-  const [tasks, setTasks] = useState<any[]>([]);  // Almacena las tareas disponibles
-  const [selectedTask, setSelectedTask] = useState<any>(null);  // Almacena la tarea seleccionada
+  const { user, role } = useAuth();  // Obtener la información del usuario autenticado
+  const [tasks, setTasks] = useState<Task[]>([]);  // Almacena las tareas disponibles
+  const [selectedTask, setSelectedTask] = useState<Task | null>(null);  // Almacena la tarea seleccionada
   const [panelMarca, setPanelMarca] = useState<string>('');
   const [lazos, setLazos] = useState<number>(1);
   const [detectorsByLazo, setDetectorsByLazo] = useState<number[]>([0]);
-  const [imagesInicio, setImagesInicio] = useState<File[]>([]);
-  const [imagesTermino, setImagesTermino] = useState<File[]>([]);
+  const [imagesInicio, setImagesInicio] = useState<(File | null)[]>([]);
+  const [imagesTermino, setImagesTermino] = useState<(File | null)[]>([]);
   const [workDays, setWorkDays] = useState<Date[]>([]);  // Array para almacenar los días del periodo de trabajo
+  const [uploadedDays, setUploadedDays] = useState<number>(0);  // Contador de días guardados
 
   // Función para obtener las tareas desde Firestore
   useEffect(() => {
     const fetchTasks = async () => {
       try {
+        if (!user) {
+          console.error('No hay usuario autenticado.');
+          return;
+        }
+
         const tasksCollection = collection(db, 'taskCards');
         const taskDocs = await getDocs(tasksCollection);
-        const tasksList = taskDocs.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        }));
-        setTasks(tasksList);
+        const tasksList = taskDocs.docs
+          .map(doc => ({
+            id: doc.id,
+            ...doc.data(),
+          })) as Task[];  // Decimos a TypeScript que estos son objetos tipo Task
+          
+        const filteredTasks = tasksList.filter(task => 
+          role === 'gerente_operaciones' || task.assignedPersonnel.includes(user.uid)  // Filtrar por usuario asignado o rol de gerente
+        );
+        setTasks(filteredTasks);
       } catch (error) {
         console.error('Error fetching tasks:', error);
       }
     };
 
     fetchTasks();
-  }, []);
+  }, [user, role]);
 
   // Manejador de cambio para la tarea seleccionada
   const handleTaskSelect = (taskId: string) => {
     const task = tasks.find(t => t.id === taskId);
-    setSelectedTask(task);  // Asignar la tarea seleccionada
-    setPanelMarca(task?.panelMarca || '');  // Cargar los valores de la tarea seleccionada
-    setLazos(task?.lazos || 1);
-    setDetectorsByLazo(task?.detectorsByLazo || [0]);
+    if (task && task.assignedPersonnel) {
+      setSelectedTask(task);  // Asignar la tarea seleccionada
+      setPanelMarca(task.panelMarca || '');  // Cargar los valores de la tarea seleccionada
+      setLazos(task.lazos || 1);
+      setDetectorsByLazo(task.detectorsByLazo || [0]);
 
-    // Calcular los días del periodo de trabajo basado en taskPeriod
-    if (task.taskPeriod && task.taskPeriod.length === 2) {
-      const [start, end] = task.taskPeriod;
-      const days = eachDayOfInterval({
-        start: new Date(start.seconds * 1000),  // Convierte la marca de tiempo de Firestore a Date
-        end: new Date(end.seconds * 1000),
-      });
-      setWorkDays(days);  // Actualizamos los días de trabajo
+      // Calcular los días del periodo de trabajo basado en taskPeriod
+      if (task.taskPeriod && task.taskPeriod.length === 2) {
+        const [start, end] = task.taskPeriod;
+        const days = eachDayOfInterval({
+          start: new Date(start.seconds * 1000),  // Convierte la marca de tiempo de Firestore a Date
+          end: new Date(end.seconds * 1000),
+        });
+        setWorkDays(days);  // Actualizamos los días de trabajo
+        setUploadedDays(0); // Reiniciar el contador de días guardados
+      }
+    } else {
+      console.error("La tarea seleccionada no tiene la propiedad 'assignedPersonnel'.");
     }
   };
 
@@ -62,9 +93,33 @@ const TaskForm: React.FC = () => {
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  // Manejador para guardar las imágenes de un día específico
+  const handleSaveDayImages = async (dayIndex: number) => {
+    const selectedDay = format(workDays[dayIndex], 'yyyyMMdd'); // Formato seguro para Firestore
+    const inicioImage = imagesInicio[dayIndex];
+    const terminoImage = imagesTermino[dayIndex];
+
+    if (!inicioImage || !terminoImage) {
+      alert('Por favor, sube las imágenes de inicio y término para este día antes de guardar.');
+      return;
+    }
+
+    try {
+      const taskDocRef = doc(db, 'taskCards', selectedTask!.id);
+      await updateDoc(taskDocRef, {
+        [`images.${selectedDay}.inicio`]: inicioImage.name,  // Guardar nombre del archivo (o su URL si lo subes)
+        [`images.${selectedDay}.termino`]: terminoImage.name,
+      });
+
+      alert(`Imágenes del día ${format(workDays[dayIndex], 'dd/MM/yyyy')} guardadas con éxito.`);
+      setUploadedDays(dayIndex + 1);  // Avanzar al siguiente día
+    } catch (error) {
+      console.error('Error al guardar las imágenes:', error);
+    }
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // Lógica para guardar la tarea (no cambia)
     alert('Formulario guardado con éxito');
   };
 
@@ -128,15 +183,28 @@ const TaskForm: React.FC = () => {
           <Form.Group>
             <Form.Label>Subir Imágenes de Inicio y Término de Trabajo</Form.Label>
             {workDays.map((day, index) => (
-              <div key={index}>
-                <Form.Label> {format(day, 'dd/MM/yyyy')}</Form.Label>
-                <input type="file" onChange={(e) => handleImageChange(e, 'inicio', index)} />
-                <input type="file" onChange={(e) => handleImageChange(e, 'termino', index)} />
+              <div key={index} style={{ display: index <= uploadedDays ? 'block' : 'none' }}>
+                <Form.Label>{format(day, 'dd/MM/yyyy')}</Form.Label>
+                <Row>
+                  <Col sm={6}>
+                    <input type="file" onChange={(e) => handleImageChange(e, 'inicio', index)} />
+                  </Col>
+                  <Col sm={6}>
+                    <input type="file" onChange={(e) => handleImageChange(e, 'termino', index)} />
+                  </Col>
+                </Row>
+                <Button
+                  variant="success"
+                  className="mt-2"
+                  onClick={() => handleSaveDayImages(index)}
+                >
+                  Guardar Imágenes del Día {format(day, 'dd/MM/yyyy')}
+                </Button>
               </div>
             ))}
           </Form.Group>
 
-          <Button type="submit">Guardar</Button>
+          <Button type="submit" variant="primary" className="mt-3">Finalizar Formulario</Button>
         </Form>
       )}
     </div>
