@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { db } from '../firebase';  // Importamos 'db'
+import { db, storage } from '../firebase';  // Importamos 'db' y 'storage'
 import { collection, getDocs, doc, updateDoc } from 'firebase/firestore';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { Form, Button, Row, Col, Card } from 'react-bootstrap';
 import { eachDayOfInterval, format } from 'date-fns';  // Para obtener todos los días dentro del rango
 import { useAuth } from '../components/AuthContext';  // Asumiendo que tienes un AuthContext para manejar el usuario
@@ -29,6 +30,7 @@ const TaskForm: React.FC = () => {
   const [imagesTermino, setImagesTermino] = useState<(File | null)[]>([]);
   const [workDays, setWorkDays] = useState<Date[]>([]);  // Array para almacenar los días del periodo de trabajo
   const [uploadedDays, setUploadedDays] = useState<number>(0);  // Contador de días guardados
+  const [isFolderCreated, setIsFolderCreated] = useState<boolean>(false); // Estado para controlar la creación de la carpeta
 
   // Función para obtener las tareas desde Firestore
   useEffect(() => {
@@ -77,6 +79,7 @@ const TaskForm: React.FC = () => {
         });
         setWorkDays(days);  // Actualizamos los días de trabajo
         setUploadedDays(0); // Reiniciar el contador de días guardados
+        setIsFolderCreated(false); // Reiniciar el estado de la carpeta
       }
     } else {
       console.error("La tarea seleccionada no tiene la propiedad 'assignedPersonnel'.");
@@ -93,30 +96,53 @@ const TaskForm: React.FC = () => {
     }
   };
 
-  // Manejador para guardar las imágenes de un día específico
-  const handleSaveDayImages = async (dayIndex: number) => {
-    const selectedDay = format(workDays[dayIndex], 'yyyyMMdd'); // Formato seguro para Firestore
-    const inicioImage = imagesInicio[dayIndex];
-    const terminoImage = imagesTermino[dayIndex];
 
-    if (!inicioImage || !terminoImage) {
-      alert('Por favor, sube las imágenes de inicio y término para este día antes de guardar.');
-      return;
-    }
+// Función para subir la imagen a Firebase Storage
+const uploadImageToStorage = async (file: File, taskCode: string, day: string, type: string) => {
+  try {
+    const storageRef = ref(storage, `forms/${taskCode}/${day}_${type}.jpg`);
+    await uploadBytes(storageRef, file);
+    const url = await getDownloadURL(storageRef);
+    console.log('Imagen subida correctamente:', url);
+    return url;
+  } catch (error) {
+    console.error('Error al subir la imagen:', error);
+    throw error;
+  }
+};
 
-    try {
-      const taskDocRef = doc(db, 'taskCards', selectedTask!.id);
-      await updateDoc(taskDocRef, {
-        [`images.${selectedDay}.inicio`]: inicioImage.name,  // Guardar nombre del archivo (o su URL si lo subes)
-        [`images.${selectedDay}.termino`]: terminoImage.name,
-      });
 
-      alert(`Imágenes del día ${format(workDays[dayIndex], 'dd/MM/yyyy')} guardadas con éxito.`);
-      setUploadedDays(dayIndex + 1);  // Avanzar al siguiente día
-    } catch (error) {
-      console.error('Error al guardar las imágenes:', error);
-    }
-  };
+// Manejador para guardar las imágenes de un día específico
+const handleSaveDayImages = async (dayIndex: number) => {
+  const selectedDay = format(workDays[dayIndex], 'yyyyMMdd'); // Formato seguro para Firestore
+  const inicioImage = imagesInicio[dayIndex];
+  const terminoImage = imagesTermino[dayIndex];
+
+  if (!inicioImage || !terminoImage) {
+    alert('Por favor, sube las imágenes de inicio y término para este día antes de guardar.');
+    return;
+  }
+
+  try {
+    // Subir las imágenes al Storage
+    const inicioImageUrl = await uploadImageToStorage(inicioImage, selectedTask!.taskCode, selectedDay, 'inicio');
+    const terminoImageUrl = await uploadImageToStorage(terminoImage, selectedTask!.taskCode, selectedDay, 'termino');
+
+    // Actualizar Firestore con las URLs de las imágenes
+    const taskDocRef = doc(db, 'taskCards', selectedTask!.id);
+    await updateDoc(taskDocRef, {
+      [`images.${selectedDay}.inicio`]: inicioImageUrl,  // Guardar la URL de la imagen
+      [`images.${selectedDay}.termino`]: terminoImageUrl,
+    });
+
+    alert(`Imágenes del día ${format(workDays[dayIndex], 'dd/MM/yyyy')} guardadas con éxito.`);
+    setUploadedDays(dayIndex + 1);  // Avanzar al siguiente día
+  } catch (error) {
+    console.error('Error al guardar las imágenes:', error);
+  }
+};
+
+
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
