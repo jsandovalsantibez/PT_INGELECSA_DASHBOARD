@@ -1,13 +1,5 @@
 import React from 'react';
-import {
-  CDBSidebar,
-  CDBSidebarContent,
-  CDBSidebarFooter,
-  CDBSidebarHeader,
-  CDBSidebarMenu,
-  CDBSidebarMenuItem,
-} from 'cdbreact';
-import { Button } from 'react-bootstrap';
+import { Button, Nav } from 'react-bootstrap';
 
 interface SidebarProps {
   setActiveView: (view: string) => void;
@@ -18,52 +10,48 @@ const Sidebar: React.FC<SidebarProps> = ({ setActiveView, handleLogout }) => {
   const [collapsed, setCollapsed] = React.useState(false);
 
   return (
-    <div style={{ display: 'flex', height: '100vh', overflow: 'scroll initial' }}>
-      <CDBSidebar
-        textColor="#fff"
-        backgroundColor="#333"
-        className=""
-        breakpoint={768}
-        toggled={false}
-        minWidth={collapsed ? "60px" : "150px"}
-        maxWidth={collapsed ? "60px" : "150px"}
+    <div style={{ display: 'flex', height: '100vh' }}>
+      <div
+        className={`d-flex flex-column bg-dark text-white p-3 ${collapsed ? 'collapsed-sidebar' : ''}`}
+        style={{ width: collapsed ? '60px' : '150px', transition: 'width 0.3s' }}
       >
-        <CDBSidebarHeader 
-          prefix={<i className="fa fa-bars fa-large" onClick={() => setCollapsed(!collapsed)}></i>}
-        >
-          <a href="/" className="text-decoration-none" style={{ color: 'inherit' }}>
-            Sidebar
-          </a>
-        </CDBSidebarHeader>
+        <div className="sidebar-header mb-4">
+          <Button variant="link" className="text-white" onClick={() => setCollapsed(!collapsed)}>
+            <i className="fa fa-bars fa-lg"></i>
+          </Button>
+          <span className={`${collapsed ? 'd-none' : ''}`}>Sidebar</span>
+        </div>
 
-        <CDBSidebarContent className="sidebar-content">
-          <CDBSidebarMenu>
-            <div onClick={() => setActiveView('taskcardlist')}>
-              <CDBSidebarMenuItem>Task</CDBSidebarMenuItem>
-            </div>
-            <div onClick={() => setActiveView('profile')}>
-              <CDBSidebarMenuItem>Profile page</CDBSidebarMenuItem>
-            </div>
-            <div onClick={() => setActiveView('createtask')}>
-              <CDBSidebarMenuItem>Create Task</CDBSidebarMenuItem>
-            </div>
-            <div onClick={() => setActiveView('createuser')}> {/* Botón siempre visible */}
-              <CDBSidebarMenuItem>Crear Usuario</CDBSidebarMenuItem>
-            </div>
-            <div onClick={() => setActiveView('taskform')}> {/* Nuevo botón para TaskForm */}
-              <CDBSidebarMenuItem>Formulario de Tarea</CDBSidebarMenuItem>
-            </div>
-          </CDBSidebarMenu>
-        </CDBSidebarContent>
+        <Nav className="flex-column">
+          <Nav.Link className="text-white" onClick={() => setActiveView('taskcardlist')}>
+            <i className="fa fa-tasks"></i>
+            <span className={`${collapsed ? 'd-none' : 'ms-2'}`}>Task</span>
+          </Nav.Link>
+          <Nav.Link className="text-white" onClick={() => setActiveView('profile')}>
+            <i className="fa fa-user"></i>
+            <span className={`${collapsed ? 'd-none' : 'ms-2'}`}>Profile page</span>
+          </Nav.Link>
+          <Nav.Link className="text-white" onClick={() => setActiveView('createtask')}>
+            <i className="fa fa-plus"></i>
+            <span className={`${collapsed ? 'd-none' : 'ms-2'}`}>Create Task</span>
+          </Nav.Link>
+          <Nav.Link className="text-white" onClick={() => setActiveView('createuser')}>
+            <i className="fa fa-user-plus"></i>
+            <span className={`${collapsed ? 'd-none' : 'ms-2'}`}>Crear Usuario</span>
+          </Nav.Link>
+          <Nav.Link className="text-white" onClick={() => setActiveView('taskform')}>
+            <i className="fa fa-file"></i>
+            <span className={`${collapsed ? 'd-none' : 'ms-2'}`}>Formulario de Tarea</span>
+          </Nav.Link>
+        </Nav>
 
-        <CDBSidebarFooter>
-          <div style={{ padding: '20px 5px' }}>
-            <Button variant="danger" onClick={handleLogout}>
-              Cerrar Sesión
-            </Button>
-          </div>
-        </CDBSidebarFooter>
-      </CDBSidebar>
+        <div className="mt-auto">
+          <Button variant="danger" className="w-100" onClick={handleLogout}>
+            <i className="fa fa-sign-out"></i>
+            <span className={`${collapsed ? 'd-none' : 'ms-2'}`}>Cerrar Sesión</span>
+          </Button>
+        </div>
+      </div>
     </div>
   );
 };
