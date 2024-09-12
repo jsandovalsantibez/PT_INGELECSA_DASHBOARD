@@ -208,6 +208,7 @@ const TaskForm: React.FC = () => {
   };
 
   return (
+    <Row style={{ backgroundColor: '#1a2b4c', minHeight: '100vh', padding: '20px' }}>
     <div className="container mt-4">
       {!selectedTask && (
         <div>
@@ -283,6 +284,7 @@ const TaskForm: React.FC = () => {
         </Form>
       )}
     </div>
+    </Row>
   );
 };
 

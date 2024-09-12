@@ -1,28 +1,33 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../components/AuthContext'; 
-import { db, storage } from '../firebase';  // Importamos 'db' en lugar de 'firestore'
-import { doc, getDoc } from 'firebase/firestore';  // Importamos desde firebase/firestore para Firestore
-import { ref, getDownloadURL } from 'firebase/storage';  // Para acceder a Firebase Storage
-import UploadProfileImage from '../components/UploadProfileImage';
-import { Container, Row, Col, Button, Card, Spinner } from 'react-bootstrap';
+import { db, storage } from '../firebase';  
+import { doc, getDoc, updateDoc } from 'firebase/firestore';  
+import { ref, getDownloadURL, uploadBytesResumable } from 'firebase/storage';  
+import { Button, Form, Spinner } from 'react-bootstrap';
+import '../styles/style_profile.css'; 
 
-const Profile: React.FC = () => {
-  const { user } = useAuth(); 
+interface ProfileProps {
+  handleLogout: () => void; 
+}
+
+const Profile: React.FC<ProfileProps> = ({ handleLogout }) => { 
+  const { user } = useAuth();
   const [photoURL, setPhotoURL] = useState<string | null>(null);
   const [fullName, setFullName] = useState<string>('');
   const [rut, setRut] = useState<string>('');
   const [contactNumber, setContactNumber] = useState<string>('');
   const [role, setRole] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(true);
-  const [showSettings, setShowSettings] = useState(false);
-  const [showUploadImage, setShowUploadImage] = useState(false);
-  const [confirmChangeImage, setConfirmChangeImage] = useState(false);
+  const [newPhoto, setNewPhoto] = useState<File | null>(null); 
+  const [newContactNumber, setNewContactNumber] = useState<string>('');
+  const [updating, setUpdating] = useState<boolean>(false);
+  const [editMode, setEditMode] = useState<boolean>(false); // Para controlar la visibilidad de los campos
 
   useEffect(() => {
     const fetchUserProfile = async () => {
       if (user) {
         try {
-          const userDocRef = doc(db, 'users', user.uid);  // Usamos 'db' en lugar de 'firestore'
+          const userDocRef = doc(db, 'users', user.uid);
           const userDoc = await getDoc(userDocRef);
           if (userDoc.exists()) {
             const userData = userDoc.data();
@@ -30,8 +35,8 @@ const Profile: React.FC = () => {
             setRut(userData?.rut || '');
             setContactNumber(userData?.contactNumber || '');
             setRole(userData?.role || '');
+            setNewContactNumber(userData?.contactNumber || ''); 
 
-            // Obtener la URL de la imagen desde Firebase Storage
             if (userData?.photoURL) {
               const imageRef = ref(storage, `profileImages/${user.uid}`);
               const url = await getDownloadURL(imageRef);
@@ -48,84 +53,120 @@ const Profile: React.FC = () => {
     fetchUserProfile();
   }, [user]);
 
-  const handleSettingsClick = () => {
-    setShowSettings(!showSettings);
-  };
-
-  const handleChangeImageClick = () => {
-    const confirmChange = window.confirm("¿Deseas cambiar tu imagen de perfil?");
-    if (confirmChange) {
-      setConfirmChangeImage(true);
-      setShowUploadImage(true);
+  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      setNewPhoto(e.target.files[0]);
     }
   };
 
-  const handleImageUploadComplete = (newPhotoURL: string) => {
-    setPhotoURL(newPhotoURL); 
-    setShowUploadImage(false); 
+  const handleContactNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setNewContactNumber(e.target.value);
+  };
+
+  const handleUpdateProfile = async () => {
+    if (!user) return;
+
+    setUpdating(true);
+    try {
+      const userDocRef = doc(db, 'users', user.uid);
+
+      // Subir la nueva imagen si se ha seleccionado una
+      if (newPhoto) {
+        const storageRef = ref(storage, `profileImages/${user.uid}`);
+        const uploadTask = uploadBytesResumable(storageRef, newPhoto);
+        
+        uploadTask.on('state_changed', 
+          () => {}, 
+          (error) => {
+            console.error('Error al subir la imagen:', error);
+          }, 
+          async () => {
+            const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
+            await updateDoc(userDocRef, { photoURL: downloadURL });
+            setPhotoURL(downloadURL); 
+          }
+        );
+      }
+
+      // Actualizar el número de contacto
+      if (newContactNumber !== contactNumber) {
+        await updateDoc(userDocRef, { contactNumber: newContactNumber });
+        setContactNumber(newContactNumber);
+      }
+
+      setUpdating(false);
+      setEditMode(false); // Ocultar los campos después de actualizar
+    } catch (error) {
+      console.error("Error al actualizar el perfil:", error);
+      setUpdating(false);
+    }
   };
 
   if (loading) {
-    return (
-      <Container className="mt-4 text-center">
-        <Spinner animation="border" role="status">
-          <span className="visually-hidden">Loading...</span>
-        </Spinner>
-      </Container>
-    );
+    return <div>Cargando...</div>;
   }
 
   return (
-    <Container className="mt-4">
-      <Row className="justify-content-center">
-        <Col md={6}>
-          <Card className="text-center">
-            <Card.Header as="h5">Perfil de Usuario</Card.Header>
-            <Card.Body>
-              {photoURL ? (
-                <img 
-                  src={photoURL} 
-                  alt="Imagen de perfil" 
-                  className="rounded-circle mb-3"
-                  style={{ 
-                    width: '150px', 
-                    height: '150px', 
-                    objectFit: 'cover' 
-                  }} 
-                />
-              ) : (
-                <p>No hay imagen de perfil</p>
-              )}
+    <div className="profile-container">
+      <div className="profile-header">
+        {photoURL ? (
+          <img src={photoURL} alt="Imagen de perfil" className="profile-image" />
+        ) : (
+          <div className="profile-image-placeholder" />
+        )}
+      </div>
+      <div className="profile-info">
+        <h2>{fullName}</h2>
+        <p>{user?.email}</p>
+        <p>{rut}</p>
+        <p>{contactNumber}</p>
+        <p><strong>Rol:</strong> {role}</p>
+      </div>
 
-              <Card.Title>{fullName || 'Sin nombre'}</Card.Title>
-              <Card.Text><strong>Email:</strong> {user?.email}</Card.Text>
-              <Card.Text><strong>RUT:</strong> {rut || 'No disponible'}</Card.Text>
-              <Card.Text><strong>Número de Contacto:</strong> {contactNumber || 'No disponible'}</Card.Text>
-              <Card.Text><strong>Rol:</strong> {role || 'No asignado'}</Card.Text>
+      {/* Botón de actualizar debajo del perfil */}
+      <div className="button-container">
+        <Button 
+          variant="primary" 
+          className="update-profile-btn" 
+          onClick={() => setEditMode(!editMode)} 
+          style={{ marginBottom: '10px', width: '100%' }} // Mismo tamaño que cerrar sesión
+        >
+          Editar Perfil
+        </Button>
+        <Button 
+          variant="secondary" 
+          className="logout-btn" 
+          onClick={handleLogout} 
+          style={{ width: '100%' }}
+        >
+          Cerrar Sesión
+        </Button>
+      </div>
 
-              <Button variant="secondary" onClick={handleSettingsClick} className="mt-2">
-                Configuración
-              </Button>
+      {/* Solo mostrar los campos si está en modo de edición */}
+      {editMode && (
+        <Form>
+          <Form.Group>
+            <Form.Label>Actualizar imagen de perfil</Form.Label>
+            <Form.Control type="file" accept="image/*" onChange={handlePhotoChange} />
+          </Form.Group>
+          <Form.Group>
+            <Form.Label>Actualizar número de contacto</Form.Label>
+            <Form.Control
+              type="text"
+              value={newContactNumber}
+              onChange={handleContactNumberChange}
+            />
+          </Form.Group>
 
-              {showSettings && (
-                <div className="mt-3">
-                  <Button variant="info" onClick={handleChangeImageClick}>
-                    Cambiar Imagen de Perfil
-                  </Button>
-                </div>
-              )}
-
-              {showUploadImage && confirmChangeImage && (
-                <div className="mt-4">
-                  <h5>Subir nueva imagen de perfil</h5>
-                  <UploadProfileImage onUploadComplete={handleImageUploadComplete} />
-                </div>
-              )}
-            </Card.Body>
-          </Card>
-        </Col>
-      </Row>
-    </Container>
+          <div className="button-container">
+            <Button variant="primary" onClick={handleUpdateProfile} disabled={updating}>
+              {updating ? <Spinner animation="border" size="sm" /> : 'Guardar Cambios'}
+            </Button>
+          </div>
+        </Form>
+      )}
+    </div>
   );
 };
 

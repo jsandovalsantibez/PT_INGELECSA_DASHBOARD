@@ -1,11 +1,15 @@
 import React, { useEffect, useState } from 'react';
 import { getFirestore, collection, getDocs, query, where } from "firebase/firestore"; 
-import { auth } from '../firebase'; // Asegúrate de tener la autenticación configurada
+import { auth } from '../firebase';
 import Card from 'react-bootstrap/Card';
 import Row from 'react-bootstrap/Row';
 import Col from 'react-bootstrap/Col';
 import Button from 'react-bootstrap/Button';
 import Badge from 'react-bootstrap/Badge';
+import falabellaLogo from '../assets/falabella_logo.png';
+import hcLogo from '../assets/hc_logo.png';
+import ikeaLogo from '../assets/ikea_logo.png';
+import tottusLogo from '../assets/tottus_logo.png';
 import Modal from 'react-bootstrap/Modal';
 
 const TaskCardsList: React.FC<{ userRole: string }> = ({ userRole }) => {
@@ -18,20 +22,16 @@ const TaskCardsList: React.FC<{ userRole: string }> = ({ userRole }) => {
       const db = getFirestore();
       let q = null;
 
-      const currentUserUID = auth.currentUser?.uid; // Obtener el UID del usuario autenticado
-      console.log("UID del usuario actual:", currentUserUID); // Verificar el UID
-
+      const currentUserUID = auth.currentUser?.uid;
       if (!currentUserUID) {
         console.error("No se pudo obtener el UID del usuario");
         return;
       }
 
       if (userRole === 'tecnico_soporte' || userRole === 'gerente_operaciones') {
-        // Mostrar solo las tareas asignadas al técnico de soporte o gerente de operaciones
         q = query(collection(db, "taskCards"), where("assignedPersonnel", "array-contains", currentUserUID));
       }
 
-      // Si no hay una consulta válida, no ejecutamos getDocs
       if (q) {
         try {
           const querySnapshot = await getDocs(q);
@@ -39,9 +39,6 @@ const TaskCardsList: React.FC<{ userRole: string }> = ({ userRole }) => {
             id: doc.id, 
             ...(doc.data() as any),
           }));
-
-          console.log("Tareas obtenidas:", cards); // Verificar las tareas obtenidas de Firestore
-
           setTaskCards(cards);
         } catch (error) {
           console.error("Error al cargar las tarjetas:", error);
@@ -59,23 +56,49 @@ const TaskCardsList: React.FC<{ userRole: string }> = ({ userRole }) => {
 
   const handleCloseModal = () => setShowModal(false);
 
+  const getPlaceLogo = (place: string) => {
+    switch (place.toLowerCase()) {
+      case 'falabella':
+        return falabellaLogo;
+      case 'homecenter':
+        return hcLogo;
+      case 'ikea':
+        return ikeaLogo;
+      case 'tottus':
+        return tottusLogo;
+      default:
+        return '';
+    }
+  };
+
   return (
     <Row style={{ backgroundColor: '#1a2b4c', minHeight: '100vh', padding: '20px' }}>
       <Col md={8}>
-        <Row xs={1} md={2} className="g-3">
+        <Row xs={1} md={3} className="g-3" style={{ gap: '10px' }}> {/* Reduce el espacio horizontal */}
           {taskCards.length === 0 ? (
             <p style={{ color: 'white' }}>No hay tareas asignadas a este usuario.</p>
           ) : (
             taskCards.map(card => (
               <Col key={card.id}>
-                <Card style={{ margin: '0.5rem', minHeight: '200px', backgroundColor: '#f8f9fa' }}>
-                  <Card.Body className="d-flex flex-column justify-content-center align-items-center" style={{ color: 'black' }}>
-                    <Card.Title>{card.place}</Card.Title>
-                    <Card.Text>{card.date}</Card.Text>
-                    <div className="d-flex align-items-center">
-                      <Button variant="primary" onClick={() => handleShowDetails(card)}>Ver detalles</Button>
+                <Card style={{ margin: '0.5rem', width: '300px', height: '350px', boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.1)' }}>
+                  <Card.Img 
+                    variant="top" 
+                    src={getPlaceLogo(card.placeCategory)} 
+                    style={{ height: '140px', objectFit: 'cover', filter: 'brightness(85%)' }}
+                  />
+                  <Card.Body className="d-flex flex-column justify-content-between" style={{ color: 'black' }}>
+                    <div>
+                      <Card.Title>{card.place}</Card.Title>
+                      <Card.Text>
+                        <strong>Fecha:</strong> {card.date}<br />
+                        <strong>Contacto:</strong> {card.contactPerson}<br />
+                        <strong>Número:</strong> {card.contactNumber}<br />
+                      </Card.Text>
+                    </div>
+                    <div className="d-flex justify-content-between align-items-center" style={{ marginTop: 'auto' }}> {/* Asegura que los elementos estén dentro */}
+                      <Button variant="primary" onClick={() => handleShowDetails(card)} style={{ whiteSpace: 'nowrap' }}>Ver detalles</Button>
                       {card.assignedPersonnel && card.assignedPersonnel.length > 0 && (
-                        <Badge pill bg="info" className="ms-2">
+                        <Badge pill bg="info">
                           {card.assignedPersonnel.length > 3 ? '3+' : card.assignedPersonnel.length}
                         </Badge>
                       )}
@@ -102,7 +125,6 @@ const TaskCardsList: React.FC<{ userRole: string }> = ({ userRole }) => {
               <p>Hora de Salida: {selectedTask.checkOutTime}</p>
               <p>Persona de contacto: {selectedTask.contactPerson}</p>
               <p>Número de contacto: {selectedTask.contactNumber}</p>
-              <p>Personal Designado: {selectedTask.assignedPersonnel.join(', ')}</p>
               <p>Herramientas: {selectedTask.tools}</p>
               <p>Tipo de Mantenimiento: {selectedTask.maintenanceType}</p>
               <p>Detalles adicionales: {selectedTask.details || 'No disponibles'}</p>
@@ -110,9 +132,7 @@ const TaskCardsList: React.FC<{ userRole: string }> = ({ userRole }) => {
           )}
         </Modal.Body>
         <Modal.Footer>
-          <Button variant="secondary" onClick={handleCloseModal}>
-            Cerrar
-          </Button>
+          <Button variant="secondary" onClick={handleCloseModal}>Cerrar</Button>
         </Modal.Footer>
       </Modal>
     </Row>
@@ -120,3 +140,10 @@ const TaskCardsList: React.FC<{ userRole: string }> = ({ userRole }) => {
 };
 
 export default TaskCardsList;
+
+
+
+
+
+
+

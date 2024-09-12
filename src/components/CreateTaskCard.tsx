@@ -205,8 +205,9 @@ const CreateTaskCard: React.FC = () => {
 
   return (
     <Container fluid>
-      <Row>
-        <Col md={5} style={{ paddingBottom: '20px' }}>
+      <Row style={{ backgroundColor: '#1a2b4c', minHeight: '100vh', padding: '20px' }}>
+      <Col md={5} style={{ paddingBottom: '20px' }}>
+        <div style={{ backgroundColor: 'white', padding: '20px', borderRadius: '8px', boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.1)' }}> {/* Fondo blanco y sombreado */}
           <Form onSubmit={handleSubmit}>
             <Row className="mb-2">
               <Form.Group as={Col} md="12">
@@ -368,7 +369,8 @@ const CreateTaskCard: React.FC = () => {
 
             <Button type="submit" variant="primary" className="w-100">Crear Tarea</Button>
           </Form>
-        </Col>
+      </div>
+      </Col>
 
         <Col md={7}>
           <ListGroup className="mt-4">
@@ -395,6 +397,7 @@ const CreateTaskCard: React.FC = () => {
             ))}
           </ListGroup>
         </Col>
+        
       </Row>
 
       <Modal show={showModal} onHide={handleCloseModal}>

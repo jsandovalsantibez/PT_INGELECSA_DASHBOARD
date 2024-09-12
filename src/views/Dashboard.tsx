@@ -4,8 +4,6 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { auth, db } from '../firebase';  // Importa 'db' en lugar de 'firestore'
 import { doc, getDoc } from "firebase/firestore";
 import Sidebar from '../components/sideBar';
-import Header from './Header';
-import Profile from './Profile';
 import TaskCardsList from '../components/TaskCardsList';
 import CreateTaskCard from '../components/CreateTaskCard';
 import HolaMundo from '../components/CreateUser';
@@ -57,8 +55,6 @@ const Dashboard: React.FC = () => {
 
   const renderActiveView = () => {
     switch (activeView) {
-      case 'profile':
-        return <Profile />;
       case 'taskcardlist':
         return <TaskCardsList userRole={role} />;
       case 'createtask':
@@ -82,7 +78,6 @@ const Dashboard: React.FC = () => {
     <div className="d-flex" style={{ height: '100vh', overflow: 'hidden' }}>
       <Sidebar setActiveView={setActiveView} handleLogout={handleLogout} />
       <div className="flex-grow-1 d-flex flex-column">
-        <Header />
         <div className="flex-grow-1" style={{ overflowY: 'auto' }}>
           {renderActiveView()}
         </div>
