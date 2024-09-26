@@ -82,6 +82,12 @@ const Sidebar: React.FC<SidebarProps> = ({ setActiveView, handleLogout }) => {
             <span className={`${collapsed ? 'd-none' : 'ms-2'}`}>Task</span>
           </Nav.Link>
 
+          <Nav.Link className="text-white" onClick={() => setActiveView('taskanalytics')}>
+            <FaClipboardList size={24} />
+            <span className={`${collapsed ? 'd-none' : 'ms-2'}`}>Análisis de Tarea</span>
+          </Nav.Link>
+
+
           {userRole === 'gerente_operaciones' && (
             <>
               <Nav.Link className="text-white" onClick={() => setActiveView('createtask')}>

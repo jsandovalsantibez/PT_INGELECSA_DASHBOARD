@@ -8,7 +8,8 @@ import TaskCardsList from '../components/TaskCardsList';
 import CreateTaskCard from '../components/CreateTaskCard';
 import HolaMundo from '../components/CreateUser';
 import TaskPlan from '../components/TaskPlan'; 
-import TaskForm from '../components/TaskForm';  // Importamos el nuevo formulario
+import TaskForm from '../components/TaskForm';
+import TaskAnalytics from './TaskAnalytics';  // Importamos el nuevo formulario
 
 const Dashboard: React.FC = () => {
   const [user, setUser] = useState<any>(null);
@@ -65,6 +66,8 @@ const Dashboard: React.FC = () => {
         return <TaskPlan taskId={taskCode || ''} />;
       case 'taskform':  // Nueva vista taskform
         return <TaskForm />;
+      case 'taskanalytics':
+        return <TaskAnalytics />;
       default:
         return <TaskCardsList userRole={role} />;
     }

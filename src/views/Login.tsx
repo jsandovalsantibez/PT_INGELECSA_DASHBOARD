@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
 import { Container, Card, Form, Button } from 'react-bootstrap';
 import 'bootstrap/dist/css/bootstrap.min.css';
-import Header from './Header'; 
 import Footer from '../components/Footer'; 
 import { useNavigate } from 'react-router-dom';
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore"; 
 import { auth, db } from "../firebase"; 
+import '../styles/style_login.css'; 
+import Logo_2 from '../assets/logo_2.png';
+
 
 const Login: React.FC = () => {
   const [email, setEmail] = useState("");
@@ -36,12 +38,18 @@ const Login: React.FC = () => {
   };
 
   return (
-    <Container fluid className="d-flex flex-column min-vh-100 p-0 m-0" style={{ backgroundColor: '#e9ecef' }}>
-      <Header />
+    <Container fluid className="d-flex flex-column min-vh-100 p-0 m-0 login-background">
+      {/* Logo centrado con enlace */}
+      <a href="/" className="logo-link">
+        <img src={Logo_2} alt="Ingelecsa Logo" className="ingelecsa-logo" />
+      </a>
+      {/* Overlay oscuro */}
+      <div className="overlay"></div>
       <div className="flex-grow-1 d-flex justify-content-center align-items-center">
-        <Card style={{ width: '100%', maxWidth: '400px', padding: '2rem', backgroundColor: '#ffffff', borderRadius: '10px' }}>
+        {/* Card con transparencia */}
+        <Card className="login-card">
           <Card.Body>
-            <h2 className="text-center mb-4">Login</h2>
+            <h2 className="text-center mb-4">Iniciar Sesión</h2>
             <Form onSubmit={handleLogin}>
               <Form.Group controlId="formBasicEmail">
                 <Form.Label>Email</Form.Label>

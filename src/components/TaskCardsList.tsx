@@ -12,44 +12,64 @@ import ikeaLogo from '../assets/ikea_logo.png';
 import tottusLogo from '../assets/tottus_logo.png';
 import Modal from 'react-bootstrap/Modal';
 
+// Definir la interfaz TaskCard
+interface TaskCard {
+  id: string;
+  place: string;
+  placeCategory: string;
+  date: string;
+  contactPerson: string;
+  contactNumber: string;
+  assignedPersonnel?: string[];
+  checkInTime?: string;
+  checkOutTime?: string;
+  tools?: string;
+  maintenanceType?: string;
+  details?: string;
+}
+
 const TaskCardsList: React.FC<{ userRole: string }> = ({ userRole }) => {
-  const [taskCards, setTaskCards] = useState<any[]>([]);
+  const [taskCards, setTaskCards] = useState<TaskCard[]>([]);
   const [showModal, setShowModal] = useState(false);
-  const [selectedTask, setSelectedTask] = useState<any>(null);
+  const [selectedTask, setSelectedTask] = useState<TaskCard | null>(null);
 
   useEffect(() => {
     const fetchTaskCards = async () => {
       const db = getFirestore();
       let q = null;
-
+  
       const currentUserUID = auth.currentUser?.uid;
       if (!currentUserUID) {
         console.error("No se pudo obtener el UID del usuario");
         return;
       }
-
+  
       if (userRole === 'tecnico_soporte' || userRole === 'gerente_operaciones') {
         q = query(collection(db, "taskCards"), where("assignedPersonnel", "array-contains", currentUserUID));
       }
-
+  
       if (q) {
         try {
           const querySnapshot = await getDocs(q);
-          const cards = querySnapshot.docs.map(doc => ({
-            id: doc.id, 
-            ...(doc.data() as any),
-          }));
+          const cards = querySnapshot.docs.map(doc => {
+            const data = doc.data() as TaskCard;
+            return {
+              ...data,
+              id: doc.id, // Asignar `id` explícitamente
+            };
+          });
           setTaskCards(cards);
         } catch (error) {
           console.error("Error al cargar las tarjetas:", error);
         }
       }
     };
-
+  
     fetchTaskCards();
   }, [userRole]);
+  
 
-  const handleShowDetails = (task: any) => {
+  const handleShowDetails = (task: TaskCard) => {
     setSelectedTask(task);
     setShowModal(true);
   };
@@ -71,44 +91,58 @@ const TaskCardsList: React.FC<{ userRole: string }> = ({ userRole }) => {
     }
   };
 
+  // Agrupar tareas por categoría
+  const groupedTasks = taskCards.reduce((acc, task) => {
+    if (!acc[task.placeCategory]) acc[task.placeCategory] = [];
+    acc[task.placeCategory].push(task);
+    return acc;
+  }, {} as { [key: string]: TaskCard[] });
+
   return (
     <Row style={{ backgroundColor: '#1a2b4c', minHeight: '100vh', padding: '20px' }}>
-      <Col md={8}>
-        <Row xs={1} md={3} className="g-3" style={{ gap: '10px' }}> {/* Reduce el espacio horizontal */}
-          {taskCards.length === 0 ? (
-            <p style={{ color: 'white' }}>No hay tareas asignadas a este usuario.</p>
-          ) : (
-            taskCards.map(card => (
-              <Col key={card.id}>
-                <Card style={{ margin: '0.5rem', width: '300px', height: '350px', boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.1)' }}>
-                  <Card.Img 
-                    variant="top" 
-                    src={getPlaceLogo(card.placeCategory)} 
-                    style={{ height: '140px', objectFit: 'cover', filter: 'brightness(85%)' }}
-                  />
-                  <Card.Body className="d-flex flex-column justify-content-between" style={{ color: 'black' }}>
-                    <div>
-                      <Card.Title>{card.place}</Card.Title>
-                      <Card.Text>
-                        <strong>Fecha:</strong> {card.date}<br />
-                        <strong>Contacto:</strong> {card.contactPerson}<br />
-                        <strong>Número:</strong> {card.contactNumber}<br />
-                      </Card.Text>
-                    </div>
-                    <div className="d-flex justify-content-between align-items-center" style={{ marginTop: 'auto' }}> {/* Asegura que los elementos estén dentro */}
-                      <Button variant="primary" onClick={() => handleShowDetails(card)} style={{ whiteSpace: 'nowrap' }}>Ver detalles</Button>
-                      {card.assignedPersonnel && card.assignedPersonnel.length > 0 && (
-                        <Badge pill bg="info">
-                          {card.assignedPersonnel.length > 3 ? '3+' : card.assignedPersonnel.length}
-                        </Badge>
-                      )}
-                    </div>
-                  </Card.Body>
-                </Card>
-              </Col>
-            ))
-          )}
-        </Row>
+      <Col md={12}>
+        {/* Título de la página */}
+        <h2 style={{ color: 'white', marginBottom: '20px' }}>Tareas Actuales</h2>
+        <hr style={{ borderTop: '3px solid white' }} />
+
+        {/* Renderizar tarjetas agrupadas por categoría */}
+        {Object.keys(groupedTasks).map(category => (
+          <div key={category} style={{ marginBottom: '40px' }}>
+            {/* Título de categoría */}
+            <h3 style={{ color: 'white' }}>{category}</h3>
+            <Row xs={1} md={3} className="g-3">
+              {groupedTasks[category].map((card: TaskCard) => (
+                <Col key={card.id}>
+                  <Card style={{ margin: '0.5rem', width: '300px', height: '350px', boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.1)' }}>
+                    <Card.Img 
+                      variant="top" 
+                      src={getPlaceLogo(card.placeCategory)} 
+                      style={{ height: '140px', objectFit: 'cover', filter: 'brightness(85%)' }}
+                    />
+                    <Card.Body className="d-flex flex-column justify-content-between" style={{ color: 'black' }}>
+                      <div>
+                        <Card.Title>{card.place}</Card.Title>
+                        <Card.Text>
+                          <strong>Fecha:</strong> {card.date}<br />
+                          <strong>Contacto:</strong> {card.contactPerson}<br />
+                          <strong>Número:</strong> {card.contactNumber}<br />
+                        </Card.Text>
+                      </div>
+                      <div className="d-flex justify-content-between align-items-center" style={{ marginTop: 'auto' }}>
+                        <Button variant="primary" onClick={() => handleShowDetails(card)} style={{ whiteSpace: 'nowrap' }}>Ver detalles</Button>
+                        {card.assignedPersonnel && card.assignedPersonnel.length > 0 && (
+                          <Badge pill bg="info">
+                            {card.assignedPersonnel.length > 3 ? '3+' : card.assignedPersonnel.length}
+                          </Badge>
+                        )}
+                      </div>
+                    </Card.Body>
+                  </Card>
+                </Col>
+              ))}
+            </Row>
+          </div>
+        ))}
       </Col>
 
       <Modal show={showModal} onHide={handleCloseModal}>
@@ -140,10 +174,3 @@ const TaskCardsList: React.FC<{ userRole: string }> = ({ userRole }) => {
 };
 
 export default TaskCardsList;
-
-
-
-
-
-
-
