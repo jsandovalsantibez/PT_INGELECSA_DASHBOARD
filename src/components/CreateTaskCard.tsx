@@ -8,13 +8,12 @@ import 'react-datepicker/dist/react-datepicker.css';
 const CreateTaskCard: React.FC = () => {
   const [placeCategory, setPlaceCategory] = useState('');
   const [place, setPlace] = useState('');
-  const [date, setDate] = useState('');
   const [checkInTime, setCheckInTime] = useState('');
   const [checkOutTime, setCheckOutTime] = useState('');
-  const [contactPerson, setContactPerson] = useState('');
+  const [contactPerson, setContactPerson] = useState(['']);
   const [contactNumber, setContactNumber] = useState('');
   const [assignedPersonnel, setAssignedPersonnel] = useState<string[]>([]);
-  const [tools, setTools] = useState('');
+  const [tools, setTools] = useState(['']);
   const [maintenanceType, setMaintenanceType] = useState('');
   const [tasks, setTasks] = useState<any[]>([]);
   const [taskCode, setTaskCode] = useState(''); 
@@ -47,19 +46,16 @@ const CreateTaskCard: React.FC = () => {
   };
 
   const generateTaskCode = () => {
-    if (!placeCategory || !place || !date || !maintenanceType) return;
+    if (!placeCategory || !place || !maintenanceType) return;
     const categoryCode = categoryCodeMap[placeCategory];
     const maintenanceCode = maintenanceTypes.find(type => type.value === maintenanceType)?.code;
-    const taskDate = new Date(date);
-    const day = String(taskDate.getDate()).padStart(2, '0');
-    const month = taskDate.toLocaleString('default', { month: 'short' }).toUpperCase();
-    const newTaskCode = `${categoryCode}_${place.toUpperCase()}_PCII_INGELECSA_${maintenanceCode}_${month}_${day}_1`;
+    const newTaskCode = `${categoryCode}_${place.toUpperCase()}_PCII_INGELECSA_${maintenanceCode}`;
     setTaskCode(newTaskCode); 
   };
 
   useEffect(() => {
     generateTaskCode(); 
-  }, [placeCategory, place, date, maintenanceType]);
+  }, [placeCategory, place, maintenanceType]);
 
   const fetchTasks = async () => {
     const db = getFirestore();
@@ -114,23 +110,30 @@ const CreateTaskCard: React.FC = () => {
     },
   };
   
+  const handleAddContactPerson = () => {
+    setContactPerson([...contactPerson, '']);
+  };
+
+  const handleContactPersonChange = (index: number, value: string) => {
+    const updatedPersons = [...contactPerson];
+    updatedPersons[index] = value;
+    setContactPerson(updatedPersons);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const db = getFirestore();
     try {
-      // Busca las coordenadas para el lugar y categoría seleccionados
       const coordinates = coordinatesMap[placeCategory]?.[place];
-  
+
       if (!coordinates) {
         alert("Coordenadas no encontradas para el lugar seleccionado.");
         return;
       }
-  
+
       await addDoc(collection(db, "taskCards"), {
         placeCategory,
         place,
-        date,
         checkInTime,
         checkOutTime,
         contactPerson,
@@ -141,19 +144,18 @@ const CreateTaskCard: React.FC = () => {
         taskCode,
         taskPeriod,
         active: false,
-        coordinates, // Añade las coordenadas aquí
+        coordinates, 
       });
-  
+
       alert("Card creada con éxito!");
       setPlaceCategory('');
       setPlace('');
-      setDate('');
       setCheckInTime('');
       setCheckOutTime('');
-      setContactPerson('');
+      setContactPerson(['']);
       setContactNumber('');
       setAssignedPersonnel([]);
-      setTools('');
+      setTools(['']);
       setMaintenanceType('');
       setTaskPeriod([null, null]);
       setTaskCode('');
@@ -162,7 +164,6 @@ const CreateTaskCard: React.FC = () => {
       console.error("Error al crear la card: ", error);
     }
   };
-  
 
   const handleDeleteTask = async (taskId: string) => {
     if (window.confirm("¿Está seguro que desea borrar esta tarea?")) {
@@ -269,17 +270,6 @@ const CreateTaskCard: React.FC = () => {
 
               <Row className="mb-2">
                 <Form.Group as={Col} md="6">
-                  <Form.Label>Fecha</Form.Label>
-                  <Form.Control
-                    type="date"
-                    value={date}
-                    onChange={e => setDate(e.target.value)}
-                    required
-                    name="date"
-                  />
-                </Form.Group>
-
-                <Form.Group as={Col} md="3">
                   <Form.Label>Hora de Ingreso</Form.Label>
                   <Form.Control
                     type="time"
@@ -290,7 +280,7 @@ const CreateTaskCard: React.FC = () => {
                   />
                 </Form.Group>
 
-                <Form.Group as={Col} md="3">
+                <Form.Group as={Col} md="6">
                   <Form.Label>Hora de Salida</Form.Label>
                   <Form.Control
                     type="time"
@@ -304,26 +294,31 @@ const CreateTaskCard: React.FC = () => {
 
               <Row className="mb-2">
                 <Form.Group as={Col} md="6">
-                  <Form.Label>Persona de Contacto</Form.Label>
-                  <Form.Control
-                    type="text"
-                    placeholder="Ingrese el nombre del contacto"
-                    value={contactPerson}
-                    onChange={e => setContactPerson(e.target.value)}
-                    required
-                    name="contactPerson"
-                  />
+                  <Form.Label>Personal de Contacto</Form.Label>
+                  {contactPerson.map((person, index) => (
+                    <Form.Control
+                      key={index}
+                      type="text"
+                      placeholder="Nombre y Apellido"
+                      value={person}
+                      onChange={e => handleContactPersonChange(index, e.target.value)}
+                      required
+                    />
+                  ))}
+                  <Button variant="outline-primary" onClick={handleAddContactPerson} className="mt-2">
+                    Agregar otra persona
+                  </Button>
                 </Form.Group>
 
                 <Form.Group as={Col} md="6">
                   <Form.Label>Número de Contacto</Form.Label>
                   <Form.Control
                     type="text"
-                    placeholder="Ingrese el número de contacto"
+                    placeholder="+569xxxxxxxx"
                     value={contactNumber}
                     onChange={e => setContactNumber(e.target.value)}
                     required
-                    name="contactNumber"
+                    pattern="\+569[0-9]{8}"
                   />
                 </Form.Group>
               </Row>
@@ -357,14 +352,23 @@ const CreateTaskCard: React.FC = () => {
               <Row className="mb-2">
                 <Form.Group as={Col} md="6">
                   <Form.Label>Herramientas</Form.Label>
-                  <Form.Control
-                    type="text"
-                    placeholder="Ingrese las herramientas necesarias"
-                    value={tools}
-                    onChange={e => setTools(e.target.value)}
-                    required
-                    name="tools"
-                  />
+                  {tools.map((tool, index) => (
+                    <Form.Control
+                      key={index}
+                      type="text"
+                      placeholder="Ingrese una herramienta"
+                      value={tool}
+                      onChange={e => {
+                        const updatedTools = [...tools];
+                        updatedTools[index] = e.target.value;
+                        setTools(updatedTools);
+                      }}
+                      required
+                    />
+                  ))}
+                  <Button variant="outline-primary" onClick={() => setTools([...tools, ''])} className="mt-2">
+                    Agregar otra herramienta
+                  </Button>
                 </Form.Group>
 
                 <Form.Group as={Col} md="6">
@@ -436,13 +440,12 @@ const CreateTaskCard: React.FC = () => {
                   <h5>{selectedTask.taskCode}</h5>
                   <p>Categoría: {selectedTask.placeCategory}</p>
                   <p>Lugar: {selectedTask.place}</p>
-                  <p>Fecha: {selectedTask.date}</p>
                   <p>Hora de Ingreso: {selectedTask.checkInTime}</p>
                   <p>Hora de Salida: {selectedTask.checkOutTime}</p>
-                  <p>Persona de contacto: {selectedTask.contactPerson}</p>
+                  <p>Persona de contacto: {selectedTask.contactPerson.join(', ')}</p>
                   <p>Número de contacto: {selectedTask.contactNumber}</p>
                   <p>Personal Designado: {selectedTask.assignedPersonnel.join(', ')}</p>
-                  <p>Herramientas: {selectedTask.tools}</p>
+                  <p>Herramientas: {selectedTask.tools.join(', ')}</p>
                   <p>Tipo de Mantenimiento: {selectedTask.maintenanceType}</p>
                 </>
               )}
