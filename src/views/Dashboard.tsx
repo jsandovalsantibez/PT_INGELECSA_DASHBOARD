@@ -7,7 +7,6 @@ import Sidebar from '../components/sideBar';
 import TaskCardsList from '../components/TaskCardsList';
 import CreateTaskCard from '../components/CreateTaskCard';
 import HolaMundo from '../components/CreateUser';
-import TaskPlan from '../components/TaskPlan'; 
 import TaskForm from '../components/TaskForm';
 import TaskAnalytics from './TaskAnalytics';  // Importamos el nuevo formulario
 
@@ -62,8 +61,6 @@ const Dashboard: React.FC = () => {
         return <CreateTaskCard />;
       case 'createuser':
         return <HolaMundo />;
-      case 'taskplan': 
-        return <TaskPlan taskId={taskCode || ''} />;
       case 'taskform':  // Nueva vista taskform
         return <TaskForm />;
       case 'taskanalytics':

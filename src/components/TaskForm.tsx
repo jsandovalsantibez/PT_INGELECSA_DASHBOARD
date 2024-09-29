@@ -26,12 +26,13 @@ const TaskForm: React.FC = () => {
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [panelMarca, setPanelMarca] = useState<string>('');
   const [lazos, setLazos] = useState<number>(0);
+  const [currentLazo, setCurrentLazo] = useState<number>(1); // Nuevo estado para seleccionar el lazo actual
   const [detectorsByLazo, setDetectorsByLazo] = useState<{ [key: string]: boolean[] }>({});
+  const [description, setDescription] = useState<string>(''); // Nueva descripción del sistema
   const [imagesInicio, setImagesInicio] = useState<(File | null)[]>([]);
   const [imagesTermino, setImagesTermino] = useState<(File | null)[]>([]);
   const [workDays, setWorkDays] = useState<Date[]>([]);
   const [uploadedDays, setUploadedDays] = useState<number>(0);
-  const [isFolderCreated, setIsFolderCreated] = useState<boolean>(false);
 
   // Función para obtener las tareas desde Firestore
   useEffect(() => {
@@ -61,7 +62,6 @@ const TaskForm: React.FC = () => {
     fetchTasks();
   }, [user, role]);
 
-  // Manejador de cambio para la tarea seleccionada
   const handleTaskSelect = (taskId: string) => {
     const task = tasks.find(t => t.id === taskId);
     if (task) {
@@ -69,6 +69,9 @@ const TaskForm: React.FC = () => {
       setPanelMarca(task.panelMarca || '');
       setLazos(task.lazos || 0);
       setDetectorsByLazo(task.detectorsByLazo || {});
+      setDescription(''); // Reiniciar descripción al cambiar tarea
+      setCurrentLazo(1); // Reiniciar el lazo actual a 1
+      // Cargar días de trabajo
       if (task.taskPeriod && task.taskPeriod.length === 2) {
         const [start, end] = task.taskPeriod;
         const days = eachDayOfInterval({
@@ -77,7 +80,6 @@ const TaskForm: React.FC = () => {
         });
         setWorkDays(days);
         setUploadedDays(0);
-        setIsFolderCreated(false);
       }
     }
   };
@@ -93,35 +95,46 @@ const TaskForm: React.FC = () => {
   }, [lazos]);
 
   const renderDetectorFields = () => {
-    const fields = [];
-    for (let i = 1; i <= lazos; i++) {
-      const lazoKey = `L${i}`;
-      const detectors = detectorsByLazo[lazoKey] || Array(50).fill(false);
-      fields.push(
-        <Col key={i} md={4} className="mb-4">
-          <Card style={{ height: '300px', overflowY: 'scroll' }}>
-            <Card.Body>
-              <Card.Title>Lazo {i}</Card.Title>
-              <Row>
-                {detectors.map((checked, j) => (
-                  <Col xs={6} sm={6} md={6} key={`${lazoKey}D${j + 1}`} className="mb-2">
-                    <Form.Check
-                      type="checkbox"
-                      id={`${lazoKey}D${j + 1}`}
-                      label={`L${i}D${j + 1}`}
-                      checked={checked}
-                      onChange={() => handleCheckboxChange(lazoKey, j)}
-                      style={{ transform: 'scale(1.5)' }}
-                    />
-                  </Col>
-                ))}
-              </Row>
-            </Card.Body>
-          </Card>
-        </Col>
-      );
-    }
-    return fields;
+    const lazoKey = `L${currentLazo}`;
+    const detectors = detectorsByLazo[lazoKey] || Array(50).fill(false);
+
+    return (
+      <Card style={{ height: '400px', overflowY: 'scroll', padding: '10px' }}>
+        <Card.Body>
+          <Card.Title>Dispositivos del Lazo {currentLazo}</Card.Title>
+          <Row>
+            <Col xs={6}>
+              {detectors.slice(0, 25).map((checked, j) => (
+                <div key={`${lazoKey}D${j + 1}`} style={{ display: 'flex', alignItems: 'center', marginBottom: '5px' }}>
+                  <Form.Check
+                    type="checkbox"
+                    id={`${lazoKey}D${j + 1}`}
+                    checked={checked}
+                    onChange={() => handleCheckboxChange(lazoKey, j)}
+                    style={{ marginRight: '10px', transform: 'scale(1.2)' }}
+                  />
+                  <Form.Label htmlFor={`${lazoKey}D${j + 1}`}>{`L${currentLazo}D${j + 1}`}</Form.Label>
+                </div>
+              ))}
+            </Col>
+            <Col xs={6}>
+              {detectors.slice(25, 50).map((checked, j) => (
+                <div key={`${lazoKey}D${j + 26}`} style={{ display: 'flex', alignItems: 'center', marginBottom: '5px' }}>
+                  <Form.Check
+                    type="checkbox"
+                    id={`${lazoKey}D${j + 26}`}
+                    checked={checked}
+                    onChange={() => handleCheckboxChange(lazoKey, j + 25)}
+                    style={{ marginRight: '10px', transform: 'scale(1.2)' }}
+                  />
+                  <Form.Label htmlFor={`${lazoKey}D${j + 26}`}>{`L${currentLazo}D${j + 26}`}</Form.Label>
+                </div>
+              ))}
+            </Col>
+          </Row>
+        </Card.Body>
+      </Card>
+    );
   };
 
   const handleCheckboxChange = (lazo: string, index: number) => {
@@ -131,18 +144,26 @@ const TaskForm: React.FC = () => {
     }));
   };
 
-  const uploadImageToStorage = async (file: File, taskCode: string, day: string, type: string) => {
-    try {
-      const storageRef = ref(storage, `forms/${taskCode}/${day}_${type}.jpg`);
-      await uploadBytes(storageRef, file);
-      const url = await getDownloadURL(storageRef);
-      return url;
-    } catch (error) {
-      console.error('Error al subir la imagen:', error);
-      throw error;
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (selectedTask) {
+      try {
+        const taskDocRef = doc(db, 'taskCards', selectedTask.id);
+        await updateDoc(taskDocRef, {
+          panelMarca,
+          lazos,
+          detectorsByLazo,
+          description, // Guardar la descripción en la base de datos
+        });
+
+        alert('Formulario guardado con éxito');
+      } catch (error) {
+        console.error('Error al guardar la tarea:', error);
+      }
     }
   };
 
+  // Función para subir las imágenes
   const handleImageChange = (
     e: React.ChangeEvent<HTMLInputElement>,
     type: 'inicio' | 'termino',
@@ -161,6 +182,14 @@ const TaskForm: React.FC = () => {
       }
     }
   };
+
+  const uploadImageToStorage = async (file: File, taskCode: string, day: string, type: 'inicio' | 'termino') => {
+    const storageRef = ref(storage, `taskImages/${taskCode}/${day}/${type}-${file.name}`);
+    await uploadBytes(storageRef, file);
+    const downloadURL = await getDownloadURL(storageRef);
+    return downloadURL;
+  };
+  
 
   const handleSaveDayImages = async (dayIndex: number) => {
     const selectedDay = format(workDays[dayIndex], 'yyyyMMdd');
@@ -189,120 +218,130 @@ const TaskForm: React.FC = () => {
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (selectedTask) {
-      try {
-        const taskDocRef = doc(db, 'taskCards', selectedTask.id);
-
-        // Verificar si la tarea está inactiva y necesita activarse
-        let updateData: Partial<Task> = {
-          panelMarca,
-          lazos,
-          detectorsByLazo,
-        };
-
-        if (!selectedTask.active) {
-          updateData.active = true; // Cambiar a true si está en false
-        }
-
-        await updateDoc(taskDocRef, updateData);
-
-        // Actualizar el estado local de la tarea seleccionada
-        setSelectedTask((prev) => ({
-          ...prev!,
-          active: true,
-        }));
-
-        alert('Formulario guardado con éxito');
-      } catch (error) {
-        console.error('Error al guardar la tarea:', error);
-      }
-    }
-  };
-
   return (
-    <div style={{ overflow: 'hidden' }}>
-      <Row style={{ backgroundColor: '#1a2b4c', minHeight: '100vh', padding: '20px' }}>
-        <Col md={12}>
-          <h2 style={{ color: 'white', marginBottom: '10px' }}>Formulario de trabajo</h2>
-          <hr style={{ borderTop: '3px solid white', marginBottom: '30px' }} />
-        </Col>
-        <div className="container mt-4">
-          {!selectedTask && (
-            <div>
-              <Row xs={1} sm={2} md={3} lg={4} className="g-4">
-                {tasks.map(task => (
-                  <Col key={task.id}>
-                    <Card onClick={() => handleTaskSelect(task.id)} style={{ cursor: 'pointer' }}>
-                      <Card.Body>
-                        <Card.Title>{task.place}</Card.Title>
-                        <Card.Text>{task.date}</Card.Text>
-                        <Card.Text><strong>Task Code:</strong> {task.taskCode}</Card.Text>
-                      </Card.Body>
-                    </Card>
-                  </Col>
-                ))}
-              </Row>
-            </div>
-          )}
+    <div style={{ padding: '20px', backgroundColor: '#1a2b4c', minHeight: '100vh' }}>
+      <h2 style={{ color: 'white', marginBottom: '10px' }}>Formulario de trabajo</h2>
+      <hr style={{ borderTop: '3px solid white', marginBottom: '30px' }} />
 
-          {selectedTask && (
-            <Form onSubmit={handleSubmit}>
-              <h3>Formulario de Mantención de Tarea - {selectedTask.taskCode}</h3>
+      <Form onSubmit={handleSubmit}>
+        {/* Dropdown para seleccionar tarea */}
+        <Form.Group as={Row} controlId="taskSelect">
+          <Form.Label column sm={2} style={{ color: 'white' }}>Seleccionar Tarea</Form.Label>
+          <Col sm={10}>
+            <Form.Control
+              as="select"
+              value={selectedTask?.id || ''}
+              onChange={(e) => handleTaskSelect(e.target.value)}
+            >
+              <option value="">Seleccione una tarea</option>
+              {tasks.map(task => (
+                <option key={task.id} value={task.id}>
+                  {task.taskCode}
+                </option>
+              ))}
+            </Form.Control>
+          </Col>
+        </Form.Group>
 
-              <Form.Group as={Row} controlId="panelMarca">
-                <Form.Label column sm={2}>Marca del Panel</Form.Label>
-                <Col sm={10}>
-                  <Form.Control as="select" value={panelMarca} onChange={(e) => setPanelMarca(e.target.value)}>
-                    <option value="">Seleccione la Marca</option>
-                    <option value="Notifire">Notifire</option>
-                    <option value="Edwards">Edwards</option>
-                    <option value="Mircom">Mircom</option>
-                  </Form.Control>
-                </Col>
-              </Form.Group>
+        {selectedTask && (
+          <Row>
+            {/* Primer cuadrante: Detalles de la tarea */}
+            <Col md={4}>
+              <Card className="mb-3">
+                <Card.Body>
+                  <Form.Group controlId="panelMarca">
+                    <Form.Label>Marca del Panel</Form.Label>
+                    <Form.Control as="select" value={panelMarca} onChange={(e) => setPanelMarca(e.target.value)}>
+                      <option value="">Seleccione la Marca</option>
+                      <option value="Notifire">Notifire</option>
+                      <option value="Edwards">Edwards</option>
+                      <option value="Mircom">Mircom</option>
+                    </Form.Control>
+                  </Form.Group>
 
-              <Form.Group as={Row} controlId="lazos">
-                <Form.Label column sm={2}>Número de Lazos</Form.Label>
-                <Col sm={10}>
-                  <Form.Control as="select" value={lazos} onChange={(e) => setLazos(parseInt(e.target.value))}>
-                    {[...Array(5)].map((_, i) => (
-                      <option key={i + 1} value={i + 1}>
-                        {i + 1}
-                      </option>
+                  <Form.Group controlId="lazos">
+                    <Form.Label>Número de Lazos</Form.Label>
+                    <Form.Control as="select" value={lazos} onChange={(e) => setLazos(parseInt(e.target.value))}>
+                      {[...Array(5)].map((_, i) => (
+                        <option key={i + 1} value={i + 1}>
+                          {i + 1}
+                        </option>
+                      ))}
+                    </Form.Control>
+                  </Form.Group>
+
+                  <Form.Group controlId="currentLazo">
+                    <Form.Label>Lazo</Form.Label>
+                    <Form.Control
+                      as="select"
+                      value={currentLazo}
+                      onChange={(e) => setCurrentLazo(parseInt(e.target.value))}
+                      disabled={lazos === 0}
+                    >
+                      {[...Array(lazos)].map((_, i) => (
+                        <option key={i + 1} value={i + 1}>
+                          {i + 1}
+                        </option>
+                      ))}
+                    </Form.Control>
+                  </Form.Group>
+                </Card.Body>
+              </Card>
+
+              {/* Segundo cuadrante: Descripción del sistema */}
+              <Card className="mb-3">
+                <Card.Body>
+                  <Form.Group controlId="description">
+                    <Form.Label>Descripción del Sistema</Form.Label>
+                    <Form.Control
+                      as="textarea"
+                      rows={5}
+                      value={description}
+                      onChange={(e) => setDescription(e.target.value)}
+                    />
+                  </Form.Group>
+                </Card.Body>
+              </Card>
+
+              {/* Cuadrante adicional: Subir imágenes */}
+              <Card>
+                <Card.Body>
+                  <Form.Group>
+                    <Form.Label>Subir Imágenes de Inicio y Término de Trabajo</Form.Label>
+                    {workDays.map((day, index) => (
+                      <div key={index} style={{ display: index <= uploadedDays ? 'block' : 'none' }}>
+                        <Form.Label>{format(day, 'dd/MM/yyyy')}</Form.Label>
+                        <Row>
+                          <Col sm={6}>
+                            <input type="file" onChange={(e) => handleImageChange(e, 'inicio', index)} />
+                          </Col>
+                          <Col sm={6}>
+                            <input type="file" onChange={(e) => handleImageChange(e, 'termino', index)} />
+                          </Col>
+                        </Row>
+                        <Button variant="success" className="mt-2" onClick={() => handleSaveDayImages(index)}>
+                          Guardar Imágenes del Día {format(day, 'dd/MM/yyyy')}
+                        </Button>
+                      </div>
                     ))}
-                  </Form.Control>
-                </Col>
-              </Form.Group>
+                  </Form.Group>
+                </Card.Body>
+              </Card>
+            </Col>
 
-              <Row>{lazos > 0 && renderDetectorFields()}</Row>
+            {/* Tercer cuadrante: Lista de detectores */}
+            <Col md={8}>
+              {lazos > 0 && renderDetectorFields()}
+            </Col>
+          </Row>
+        )}
 
-              <Form.Group>
-                <Form.Label>Subir Imágenes de Inicio y Término de Trabajo</Form.Label>
-                {workDays.map((day, index) => (
-                  <div key={index} style={{ display: index <= uploadedDays ? 'block' : 'none' }}>
-                    <Form.Label>{format(day, 'dd/MM/yyyy')}</Form.Label>
-                    <Row>
-                      <Col sm={6}>
-                        <input type="file" onChange={(e) => handleImageChange(e, 'inicio', index)} />
-                      </Col>
-                      <Col sm={6}>
-                        <input type="file" onChange={(e) => handleImageChange(e, 'termino', index)} />
-                      </Col>
-                    </Row>
-                    <Button variant="success" className="mt-2" onClick={() => handleSaveDayImages(index)}>
-                      Guardar Imágenes del Día {format(day, 'dd/MM/yyyy')}
-                    </Button>
-                  </div>
-                ))}
-              </Form.Group>
-
-              <Button type="submit" variant="primary" className="mt-3">Finalizar Formulario</Button>
-            </Form>
-          )}
-        </div>
-      </Row>
+        {selectedTask && (
+          <Button type="submit" variant="primary" className="mt-3">
+            Guardar Formulario
+          </Button>
+        )}
+      </Form>
     </div>
   );
 };

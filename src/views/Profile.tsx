@@ -7,7 +7,7 @@ import { Button, Form, Spinner } from 'react-bootstrap';
 import '../styles/style_profile.css'; 
 
 interface ProfileProps {
-  handleLogout: () => void; 
+  handleLogout?: () => void; 
 }
 
 const Profile: React.FC<ProfileProps> = ({ handleLogout }) => { 
