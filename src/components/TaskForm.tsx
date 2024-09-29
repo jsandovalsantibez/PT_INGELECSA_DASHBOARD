@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { db, storage } from '../firebase';
-import { collection, getDocs, doc, updateDoc } from 'firebase/firestore';
+import { collection, getDocs, doc, updateDoc, getDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { Form, Button, Row, Col, Card } from 'react-bootstrap';
 import { eachDayOfInterval, format } from 'date-fns';
@@ -11,13 +11,14 @@ interface Task {
   id: string;
   panelMarca?: string;
   lazos?: number;
-  detectorsByLazo?: { [key: string]: boolean[] };
+  detectorsByLazo?: { [key: string]: string[] };
   assignedPersonnel: string[];
   taskPeriod?: { seconds: number }[];
   taskCode: string;
   place: string;
   date: string;
   active?: boolean;
+  images?: { [day: string]: { inicio?: string; termino?: string } };
 }
 
 const TaskForm: React.FC = () => {
@@ -26,9 +27,9 @@ const TaskForm: React.FC = () => {
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [panelMarca, setPanelMarca] = useState<string>('');
   const [lazos, setLazos] = useState<number>(0);
-  const [currentLazo, setCurrentLazo] = useState<number>(1); // Nuevo estado para seleccionar el lazo actual
-  const [detectorsByLazo, setDetectorsByLazo] = useState<{ [key: string]: boolean[] }>({});
-  const [description, setDescription] = useState<string>(''); // Nueva descripción del sistema
+  const [currentLazo, setCurrentLazo] = useState<number>(1);
+  const [detectorsByLazo, setDetectorsByLazo] = useState<{ [key: string]: string[] }>({});
+  const [description, setDescription] = useState<string>('');
   const [imagesInicio, setImagesInicio] = useState<(File | null)[]>([]);
   const [imagesTermino, setImagesTermino] = useState<(File | null)[]>([]);
   const [workDays, setWorkDays] = useState<Date[]>([]);
@@ -62,15 +63,16 @@ const TaskForm: React.FC = () => {
     fetchTasks();
   }, [user, role]);
 
-  const handleTaskSelect = (taskId: string) => {
+  const handleTaskSelect = async (taskId: string) => {
     const task = tasks.find(t => t.id === taskId);
     if (task) {
       setSelectedTask(task);
       setPanelMarca(task.panelMarca || '');
       setLazos(task.lazos || 0);
       setDetectorsByLazo(task.detectorsByLazo || {});
-      setDescription(''); // Reiniciar descripción al cambiar tarea
-      setCurrentLazo(1); // Reiniciar el lazo actual a 1
+      setDescription('');
+      setCurrentLazo(1);
+
       // Cargar días de trabajo
       if (task.taskPeriod && task.taskPeriod.length === 2) {
         const [start, end] = task.taskPeriod;
@@ -79,68 +81,91 @@ const TaskForm: React.FC = () => {
           end: new Date(end.seconds * 1000),
         });
         setWorkDays(days);
-        setUploadedDays(0);
+
+        // Verificar imágenes subidas previamente
+        await checkUploadedImages(task, days);
       }
+    }
+  };
+
+  const checkUploadedImages = async (task: Task, days: Date[]) => {
+    try {
+      const taskDocRef = doc(db, 'taskCards', task.id);
+      const taskDoc = await getDoc(taskDocRef);
+      const taskData = taskDoc.data() as Task;
+
+      // Verificar cuántos días ya tienen imágenes subidas
+      let count = 0;
+      for (let i = 0; i < days.length; i++) {
+        const dayKey = format(days[i], 'yyyyMMdd');
+        if (taskData.images && taskData.images[dayKey]) {
+          count++;
+        }
+      }
+      setUploadedDays(count);
+      setImagesInicio(Array(days.length).fill(null));
+      setImagesTermino(Array(days.length).fill(null));
+    } catch (error) {
+      console.error('Error al verificar imágenes subidas:', error);
     }
   };
 
   // Crear campos de detectores en función de la cantidad de lazos seleccionada
   useEffect(() => {
-    const updatedDetectorsByLazo: { [key: string]: boolean[] } = {};
+    const updatedDetectorsByLazo: { [key: string]: string[] } = {};
     for (let i = 1; i <= lazos; i++) {
       const lazoKey = `L${i}`;
-      updatedDetectorsByLazo[lazoKey] = detectorsByLazo[lazoKey] || Array(50).fill(false);
+      updatedDetectorsByLazo[lazoKey] = detectorsByLazo[lazoKey] || Array(50).fill('no_hecho');
     }
     setDetectorsByLazo(updatedDetectorsByLazo);
   }, [lazos]);
 
   const renderDetectorFields = () => {
     const lazoKey = `L${currentLazo}`;
-    const detectors = detectorsByLazo[lazoKey] || Array(50).fill(false);
+    const detectors = detectorsByLazo[lazoKey] || Array(50).fill('no_hecho');
 
     return (
-      <Card style={{ height: '400px', overflowY: 'scroll', padding: '10px' }}>
+      <Card style={{ height: '400px', overflowY: 'scroll', padding: '10px', width: '100%' }}>
         <Card.Body>
           <Card.Title>Dispositivos del Lazo {currentLazo}</Card.Title>
           <Row>
-            <Col xs={6}>
-              {detectors.slice(0, 25).map((checked, j) => (
-                <div key={`${lazoKey}D${j + 1}`} style={{ display: 'flex', alignItems: 'center', marginBottom: '5px' }}>
-                  <Form.Check
-                    type="checkbox"
-                    id={`${lazoKey}D${j + 1}`}
-                    checked={checked}
-                    onChange={() => handleCheckboxChange(lazoKey, j)}
-                    style={{ marginRight: '10px', transform: 'scale(1.2)' }}
-                  />
-                  <Form.Label htmlFor={`${lazoKey}D${j + 1}`}>{`L${currentLazo}D${j + 1}`}</Form.Label>
+            {detectors.map((state, index) => (
+              <Col key={`${lazoKey}D${index + 1}`} xs={12} className="mb-3">
+                <div style={{ display: 'flex', alignItems: 'center' }}>
+                  <Form.Label style={{ marginRight: '15px' }}>{`L${currentLazo}D${index + 1}`}</Form.Label>
+                  <Button
+                    variant={state === 'hecho' ? 'success' : 'outline-success'}
+                    onClick={() => handleStateChange(lazoKey, index, 'hecho')}
+                    className="mr-2"
+                  >
+                    Hecho
+                  </Button>
+                  <Button
+                    variant={state === 'no_hecho' ? 'danger' : 'outline-danger'}
+                    onClick={() => handleStateChange(lazoKey, index, 'no_hecho')}
+                    className="mr-2"
+                  >
+                    No Hecho
+                  </Button>
+                  <Button
+                    variant={state === 'obstruido' ? 'warning' : 'outline-warning'}
+                    onClick={() => handleStateChange(lazoKey, index, 'obstruido')}
+                  >
+                    Obstruido
+                  </Button>
                 </div>
-              ))}
-            </Col>
-            <Col xs={6}>
-              {detectors.slice(25, 50).map((checked, j) => (
-                <div key={`${lazoKey}D${j + 26}`} style={{ display: 'flex', alignItems: 'center', marginBottom: '5px' }}>
-                  <Form.Check
-                    type="checkbox"
-                    id={`${lazoKey}D${j + 26}`}
-                    checked={checked}
-                    onChange={() => handleCheckboxChange(lazoKey, j + 25)}
-                    style={{ marginRight: '10px', transform: 'scale(1.2)' }}
-                  />
-                  <Form.Label htmlFor={`${lazoKey}D${j + 26}`}>{`L${currentLazo}D${j + 26}`}</Form.Label>
-                </div>
-              ))}
-            </Col>
+              </Col>
+            ))}
           </Row>
         </Card.Body>
       </Card>
     );
   };
 
-  const handleCheckboxChange = (lazo: string, index: number) => {
+  const handleStateChange = (lazo: string, index: number, state: string) => {
     setDetectorsByLazo(prev => ({
       ...prev,
-      [lazo]: prev[lazo].map((det, i) => (i === index ? !det : det)),
+      [lazo]: prev[lazo].map((det, i) => (i === index ? state : det)),
     }));
   };
 
@@ -154,6 +179,7 @@ const TaskForm: React.FC = () => {
           lazos,
           detectorsByLazo,
           description, // Guardar la descripción en la base de datos
+          active: true, // Cambiar el estado a activo al guardar el formulario
         });
 
         alert('Formulario guardado con éxito');
@@ -163,7 +189,6 @@ const TaskForm: React.FC = () => {
     }
   };
 
-  // Función para subir las imágenes
   const handleImageChange = (
     e: React.ChangeEvent<HTMLInputElement>,
     type: 'inicio' | 'termino',
@@ -189,7 +214,6 @@ const TaskForm: React.FC = () => {
     const downloadURL = await getDownloadURL(storageRef);
     return downloadURL;
   };
-  
 
   const handleSaveDayImages = async (dayIndex: number) => {
     const selectedDay = format(workDays[dayIndex], 'yyyyMMdd');
@@ -209,6 +233,7 @@ const TaskForm: React.FC = () => {
       await updateDoc(taskDocRef, {
         [`images.${selectedDay}.inicio`]: inicioImageUrl,
         [`images.${selectedDay}.termino`]: terminoImageUrl,
+        active: true, // Actualizar el estado a activo después de subir las imágenes
       });
 
       alert(`Imágenes del día ${format(workDays[dayIndex], 'dd/MM/yyyy')} guardadas con éxito.`);
@@ -310,7 +335,7 @@ const TaskForm: React.FC = () => {
                     <Form.Label>Subir Imágenes de Inicio y Término de Trabajo</Form.Label>
                     {workDays.map((day, index) => (
                       <div key={index} style={{ display: index <= uploadedDays ? 'block' : 'none' }}>
-                        <Form.Label>{format(day, 'dd/MM/yyyy')}</Form.Label>
+                        <Form.Label>{`Día: ${format(day, 'dd/MM/yyyy')}`}</Form.Label>
                         <Row>
                           <Col sm={6}>
                             <input type="file" onChange={(e) => handleImageChange(e, 'inicio', index)} />

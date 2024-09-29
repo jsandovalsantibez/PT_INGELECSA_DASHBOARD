@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../components/AuthContext';
 import { getFirestore, collection, getDocs, query, where, doc, getDoc } from 'firebase/firestore';
-import { Form, Container, Row, Col, Image } from 'react-bootstrap';
+import { Form, Container, Row, Col, Carousel } from 'react-bootstrap';
 import { Pie } from 'react-chartjs-2';
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
@@ -21,9 +21,10 @@ const markerIcon = new L.Icon({
 
 interface Task {
   id: string;
-  detectorsByLazo?: { [key: string]: boolean[] };
+  detectorsByLazo?: { [key: string]: string[] };
   coordinates?: { lat: number; lng: number };
-  assignedPersonnel?: string[]; // IDs de los técnicos asignados
+  assignedPersonnel?: string[];
+  images?: { [key: string]: { inicio: string; termino: string } };
   [key: string]: any;
 }
 
@@ -40,7 +41,7 @@ const TaskAnalytics: React.FC = () => {
   const [selectedChart, setSelectedChart] = useState<string>('Gráfico General');
   const [loading, setLoading] = useState<boolean>(true);
   const [markerCoords, setMarkerCoords] = useState<{ lat: number; lng: number } | null>(null);
-  const [assignedUsers, setAssignedUsers] = useState<User[]>([]); // Estado para técnicos asignados
+  const [assignedUsers, setAssignedUsers] = useState<User[]>([]);
 
   useEffect(() => {
     const fetchTasks = async () => {
@@ -54,12 +55,12 @@ const TaskAnalytics: React.FC = () => {
         const db = getFirestore();
         const tasksCollection = collection(db, 'taskCards');
         const tasksQuery = query(
-          tasksCollection, 
+          tasksCollection,
           where('assignedPersonnel', 'array-contains', user.uid),
           where('active', '==', true)
         );
         const tasksSnapshot = await getDocs(tasksQuery);
-        
+
         const tasksData = tasksSnapshot.docs.map((doc) => ({
           id: doc.id,
           ...doc.data(),
@@ -97,16 +98,16 @@ const TaskAnalytics: React.FC = () => {
       const db = getFirestore();
       const taskDocRef = doc(db, 'taskCards', taskId);
       const taskDoc = await getDoc(taskDocRef);
-  
+
       if (taskDoc.exists()) {
         const taskData = taskDoc.data();
         setSelectedTask({ id: taskDoc.id, ...taskData });
-  
+
         // Si existen coordenadas en la tarea, actualiza el marcador en el mapa
         if (taskData.coordinates) {
           setMarkerCoords(taskData.coordinates);
         } else {
-          setMarkerCoords(null); // Si no hay coordenadas, quita el marcador
+          setMarkerCoords(null);
         }
 
         // Obtener técnicos asignados
@@ -126,29 +127,83 @@ const TaskAnalytics: React.FC = () => {
     setSelectedChart(chartType);
   };
 
+  // Obtener datos combinados de los detectores (hecho, no hecho, obstruido)
   const getCombinedDetectorsData = () => {
-    if (!selectedTask || !selectedTask.detectorsByLazo) return { true: 0, false: 0 };
+    if (!selectedTask || !selectedTask.detectorsByLazo) return { hecho: 0, no_hecho: 0, obstruido: 0 };
 
     const detectors = Object.values(selectedTask.detectorsByLazo).flat();
-    const trueCount = detectors.filter((det) => det).length;
-    const falseCount = detectors.length - trueCount;
+    const hechoCount = detectors.filter((det) => det === 'hecho').length;
+    const noHechoCount = detectors.filter((det) => det === 'no_hecho').length;
+    const obstruidoCount = detectors.filter((det) => det === 'obstruido').length;
 
-    return { true: trueCount, false: falseCount };
+    return { hecho: hechoCount, no_hecho: noHechoCount, obstruido: obstruidoCount };
   };
 
+  // Obtener datos de detectores por lazo (hecho, no hecho, obstruido)
   const getLazoDetectorsData = (lazoKey: string) => {
     if (!selectedTask || !selectedTask.detectorsByLazo || !selectedTask.detectorsByLazo[lazoKey]) {
-      return { true: 0, false: 0 };
+      return { hecho: 0, no_hecho: 0, obstruido: 0 };
     }
 
     const lazoDetectors = selectedTask.detectorsByLazo[lazoKey];
-    const trueCount = lazoDetectors.filter((det) => det).length;
-    const falseCount = lazoDetectors.length - trueCount;
+    const hechoCount = lazoDetectors.filter((det) => det === 'hecho').length;
+    const noHechoCount = lazoDetectors.filter((det) => det === 'no_hecho').length;
+    const obstruidoCount = lazoDetectors.filter((det) => det === 'obstruido').length;
 
-    return { true: trueCount, false: falseCount };
+    return { hecho: hechoCount, no_hecho: noHechoCount, obstruido: obstruidoCount };
   };
 
   const combinedData = getCombinedDetectorsData();
+
+  const renderChartDetails = (data: { hecho: number; no_hecho: number; obstruido: number }) => {
+    const total = data.hecho + data.no_hecho + data.obstruido;
+
+    return (
+      <div style={{ marginLeft: '20px', fontSize: '1.2em' }}>
+        <h5>Detalles del Gráfico</h5>
+        <div style={{ color: '#FFA500' }}>
+          Hecho: {data.hecho} detectores ({((data.hecho / total) * 100).toFixed(2)}%)
+        </div>
+        <div style={{ color: '#1A2B4C' }}>
+          No Hecho: {data.no_hecho} detectores ({((data.no_hecho / total) * 100).toFixed(2)}%)
+        </div>
+        <div style={{ color: '#A9A9A9' }}>
+          Obstruido: {data.obstruido} detectores ({((data.obstruido / total) * 100).toFixed(2)}%)
+        </div>
+      </div>
+    );
+  };
+
+  const renderImageCarousel = () => {
+    if (!selectedTask || !selectedTask.images) {
+      return <p>Aun no existen imágenes asociadas a esta tarea.</p>;
+    }
+
+    const imageNodes = Object.values(selectedTask.images);
+    const allImages = imageNodes
+      .map((node) => [node.inicio, node.termino])
+      .flat()
+      .filter((url) => url); // Filtrar URLs no definidas
+
+    if (allImages.length === 0) {
+      return <p>Aun no existen imágenes asociadas a esta tarea.</p>;
+    }
+
+    return (
+      <Carousel>
+        {allImages.map((imgUrl, index) => (
+          <Carousel.Item key={index}>
+            <img
+              className="d-block w-100"
+              src={imgUrl}
+              alt={`Imagen ${index + 1}`}
+              style={{ height: '300px', objectFit: 'cover' }}
+            />
+          </Carousel.Item>
+        ))}
+      </Carousel>
+    );
+  };
 
   return (
     <Container fluid style={{ overflow: 'hidden', backgroundColor: '#1a2b4c', minHeight: '100vh', padding: '20px' }}>
@@ -188,37 +243,46 @@ const TaskAnalytics: React.FC = () => {
               </Form.Control>
             </Form.Group>
             {/* Mostrar gráfico seleccionado */}
-            <div style={{ height: '300px', marginTop: '20px' }}>
-              {selectedChart === 'Gráfico General' ? (
-                <Pie
-                  data={{
-                    labels: ['Completados', 'No Completados'],
-                    datasets: [
-                      {
-                        data: [combinedData.true, combinedData.false],
-                        backgroundColor: ['#1A2B4C', '#FFA500'],
-                      },
-                    ],
-                  }}
-                  options={{ responsive: true, maintainAspectRatio: false }}
-                />
-              ) : (
-                <Pie
-                  data={{
-                    labels: ['Completados', 'No Completados'],
-                    datasets: [
-                      {
-                        data: [
-                          getLazoDetectorsData(selectedChart).true,
-                          getLazoDetectorsData(selectedChart).false,
-                        ],
-                        backgroundColor: ['#1A2B4C', '#FFA500'],
-                      },
-                    ],
-                  }}
-                  options={{ responsive: true, maintainAspectRatio: false }}
-                />
-              )}
+            <div style={{ display: 'flex', alignItems: 'center', marginTop: '20px' }}>
+              <div style={{ height: '400px', width: '400px' }}>
+                {selectedChart === 'Gráfico General' ? (
+                  <Pie
+                    data={{
+                      labels: ['Hecho', 'No Hecho', 'Obstruido'],
+                      datasets: [
+                        {
+                          data: [combinedData.hecho, combinedData.no_hecho, combinedData.obstruido],
+                          backgroundColor: ['#FFA500', '#1A2B4C', '#A9A9A9'], // Colores: naranja, azul marino, gris
+                        },
+                      ],
+                    }}
+                    options={{ responsive: true, maintainAspectRatio: false }}
+                  />
+                ) : (
+                  <Pie
+                    data={{
+                      labels: ['Hecho', 'No Hecho', 'Obstruido'],
+                      datasets: [
+                        {
+                          data: [
+                            getLazoDetectorsData(selectedChart).hecho,
+                            getLazoDetectorsData(selectedChart).no_hecho,
+                            getLazoDetectorsData(selectedChart).obstruido,
+                          ],
+                          backgroundColor: ['#FFA500', '#1A2B4C', '#A9A9A9'], // Colores: naranja, azul marino, gris
+                        },
+                      ],
+                    }}
+                    options={{ responsive: true, maintainAspectRatio: false }}
+                  />
+                )}
+              </div>
+              {/* Detalles del gráfico */}
+              <div style={{ marginLeft: '30px' }}>
+                {selectedChart === 'Gráfico General'
+                  ? renderChartDetails(combinedData)
+                  : renderChartDetails(getLazoDetectorsData(selectedChart))}
+              </div>
             </div>
           </div>
         </Col>
@@ -231,7 +295,6 @@ const TaskAnalytics: React.FC = () => {
                 url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                 attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
               />
-              {/* Mostrar el marcador solo si existen coordenadas */}
               {markerCoords && (
                 <Marker position={[markerCoords.lat, markerCoords.lng]} icon={markerIcon}>
                   <Popup>{selectedTask?.taskCode}</Popup>
@@ -242,34 +305,50 @@ const TaskAnalytics: React.FC = () => {
         </Col>
         {/* Tercer cuadrante con imágenes de perfil */}
         <Col md={6} style={{ padding: '10px' }}>
-        <div style={{ 
-            backgroundColor: 'white', 
-            padding: '20px', 
-            borderRadius: '8px', 
-            height: '100%', 
-            overflowX: 'auto', 
-            whiteSpace: 'nowrap' 
-        }}>
-          <h5>Técnicos Asignados</h5>
-          <div style={{ display: 'flex', flexWrap: 'nowrap' }}>
-            {assignedUsers.map((user) => (
-              <div key={user.id} style={{ textAlign: 'center', marginRight: '15px' }}>
-                <img
-                  src={user.photoURL}
-                  style={{ 
-                    width: '60px', 
-                    height: '60px', 
-                    objectFit: 'cover', 
-                    borderRadius: '50%' 
-                  }}
-                  alt={user.fullName}
-                />
-                <p style={{ marginTop: '10px', fontSize: '14px' }}>{user.fullName}</p>
-              </div>
-            ))}
+          <div
+            style={{
+              backgroundColor: 'white',
+              padding: '20px',
+              borderRadius: '8px',
+              height: '100%',
+              overflowX: 'auto',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            <h5>Técnicos Asignados</h5>
+            <div style={{ display: 'flex', flexWrap: 'nowrap' }}>
+              {assignedUsers.map((user) => (
+                <div key={user.id} style={{ textAlign: 'center', marginRight: '15px' }}>
+                  <img
+                    src={user.photoURL}
+                    style={{
+                      width: '60px',
+                      height: '60px',
+                      objectFit: 'cover',
+                      borderRadius: '50%',
+                    }}
+                    alt={user.fullName}
+                  />
+                  <p style={{ marginTop: '10px', fontSize: '14px' }}>{user.fullName}</p>
+                </div>
+              ))}
+            </div>
           </div>
-        </div>
-      </Col>
+        </Col>
+        {/* Cuarto cuadrante con carrusel de imágenes */}
+        <Col md={6} style={{ padding: '10px' }}>
+          <div
+            style={{
+              backgroundColor: 'white',
+              padding: '20px',
+              borderRadius: '8px',
+              height: '100%',
+            }}
+          >
+            <h5>Imágenes de la Tarea</h5>
+            {renderImageCarousel()}
+          </div>
+        </Col>
       </Row>
     </Container>
   );
