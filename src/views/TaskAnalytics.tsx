@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../components/AuthContext';
 import { getFirestore, collection, getDocs, query, where, doc, getDoc } from 'firebase/firestore';
-import { Form, Container, Row, Col, Carousel } from 'react-bootstrap';
+import { Form, Container, Row, Col } from 'react-bootstrap';
 import { Pie } from 'react-chartjs-2';
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
@@ -174,37 +174,6 @@ const TaskAnalytics: React.FC = () => {
     );
   };
 
-  const renderImageCarousel = () => {
-    if (!selectedTask || !selectedTask.images) {
-      return <p>Aun no existen imágenes asociadas a esta tarea.</p>;
-    }
-
-    const imageNodes = Object.values(selectedTask.images);
-    const allImages = imageNodes
-      .map((node) => [node.inicio, node.termino])
-      .flat()
-      .filter((url) => url); // Filtrar URLs no definidas
-
-    if (allImages.length === 0) {
-      return <p>Aun no existen imágenes asociadas a esta tarea.</p>;
-    }
-
-    return (
-      <Carousel>
-        {allImages.map((imgUrl, index) => (
-          <Carousel.Item key={index}>
-            <img
-              className="d-block w-100"
-              src={imgUrl}
-              alt={`Imagen ${index + 1}`}
-              style={{ height: '300px', objectFit: 'cover' }}
-            />
-          </Carousel.Item>
-        ))}
-      </Carousel>
-    );
-  };
-
   return (
     <Container fluid style={{ overflow: 'hidden', backgroundColor: '#1a2b4c', minHeight: '100vh', padding: '20px' }}>
       <Row>
@@ -335,7 +304,7 @@ const TaskAnalytics: React.FC = () => {
             </div>
           </div>
         </Col>
-        {/* Cuarto cuadrante con carrusel de imágenes */}
+        {/* Cuarto cuadrante sin carrusel de imágenes */}
         <Col md={6} style={{ padding: '10px' }}>
           <div
             style={{
@@ -345,8 +314,7 @@ const TaskAnalytics: React.FC = () => {
               height: '100%',
             }}
           >
-            <h5>Imágenes de la Tarea</h5>
-            {renderImageCarousel()}
+            {/* Este cuadrante estaba dedicado al carrusel de imágenes, ahora está vacío */}
           </div>
         </Col>
       </Row>

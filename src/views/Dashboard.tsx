@@ -4,7 +4,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { auth, db } from '../firebase';  // Importa 'db' en lugar de 'firestore'
 import { doc, getDoc } from "firebase/firestore";
 import Sidebar from '../components/sideBar';
-import TaskCardsList from '../components/TaskCardsList';
+import TaskCardsList from '../components/HomePage';
 import CreateTaskCard from '../components/CreateTaskCard';
 import HolaMundo from '../components/CreateUser';
 import TaskForm from '../components/TaskForm';
