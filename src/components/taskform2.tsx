@@ -5,7 +5,6 @@ import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { Form, Button, Row, Col, Card } from 'react-bootstrap';
 import { eachDayOfInterval, format } from 'date-fns';
 import { useAuth } from '../components/AuthContext';
-import '../styles/style_taskform.css';
 
 // Definir una interfaz para el objeto de tarea
 interface Task {
@@ -126,7 +125,7 @@ const TaskForm: React.FC = () => {
     const detectors = detectorsByLazo[lazoKey] || Array(50).fill('no_hecho');
 
     return (
-      <Card style={{ height: '100%', overflowY: 'auto', padding: '10px', width: '100%' }}> {/* ** */}
+      <Card style={{ height: '400px', overflowY: 'scroll', padding: '10px', width: '100%' }}>
         <Card.Body>
           <Card.Title>Dispositivos del Lazo {currentLazo}</Card.Title>
           <Row>
@@ -245,77 +244,35 @@ const TaskForm: React.FC = () => {
   };
 
   return (
-    <div style={{ padding: '20px', backgroundColor: '#1a2b4c', minHeight: '100vh', overflow: 'hidden' }}> {/* ** */}
+    <div style={{ padding: '20px', backgroundColor: '#1a2b4c', minHeight: '100vh' }}>
       <h2 style={{ color: 'white', marginBottom: '10px' }}>Formulario de trabajo</h2>
       <hr style={{ borderTop: '3px solid white', marginBottom: '30px' }} />
 
       <Form onSubmit={handleSubmit}>
-        {/* SUPERIORES 1*/}
-        {/* Cuadrante 1*/}
-        <Row className="g-3" style={{ height: '45vh' }}>
-        <Col md={6} style={{ padding: '10px' }}>
-            <Card style={{ height: '100%' }}>
-              <Card.Body>
-                <Form.Group controlId="taskSelect">
-                  <Form.Label>Seleccionar Tarea</Form.Label>
-                  <Form.Control
-                    as="select"
-                    value={selectedTask?.id || ''}
-                    onChange={(e) => handleTaskSelect(e.target.value)}
-                  >
-                    <option value="">Seleccione una tarea</option>
-                    {tasks.map(task => (
-                      <option key={task.id} value={task.id}>
-                        {task.taskCode}
-                      </option>
-                    ))}
-                  </Form.Control>
-                </Form.Group>
-                <Form.Group controlId="description">
-                  <Form.Label>Descripción del Sistema</Form.Label>
-                  <Form.Control
-                    as="textarea"
-                    rows={5}
-                    value={description}
-                    onChange={(e) => setDescription(e.target.value)}
-                  />
-                </Form.Group>
-              </Card.Body>
-            </Card>
+        {/* Dropdown para seleccionar tarea */}
+        <Form.Group as={Row} controlId="taskSelect">
+          <Form.Label column sm={2} style={{ color: 'white' }}>Seleccionar Tarea</Form.Label>
+          <Col sm={10}>
+            <Form.Control
+              as="select"
+              value={selectedTask?.id || ''}
+              onChange={(e) => handleTaskSelect(e.target.value)}
+            >
+              <option value="">Seleccione una tarea</option>
+              {tasks.map(task => (
+                <option key={task.id} value={task.id}>
+                  {task.taskCode}
+                </option>
+              ))}
+            </Form.Control>
           </Col>
+        </Form.Group>
 
-        {/* Cuadrante 2*/}
-        <Col md={6} style={{ padding: '10px' }}>
-            <Card style={{ height: '100%' }}>
-              <Card.Body>
-                <Form.Group>
-                  <Form.Label>Subir Imágenes de Inicio y Término de Trabajo</Form.Label>
-                  {workDays.map((day, index) => (
-                    <div key={index} style={{ display: index <= uploadedDays ? 'block' : 'none' }}>
-                      <Form.Label>{`Día: ${format(day, 'dd/MM/yyyy')}`}</Form.Label>
-                      <Row>
-                        <Col sm={6}>
-                          <input type="file" onChange={(e) => handleImageChange(e, 'inicio', index)} />
-                        </Col>
-                        <Col sm={6}>
-                          <input type="file" onChange={(e) => handleImageChange(e, 'termino', index)} />
-                        </Col>
-                      </Row>
-                      <Button variant="success" className="mt-2" onClick={() => handleSaveDayImages(index)}>
-                        Guardar Imágenes del Día {format(day, 'dd/MM/yyyy')}
-                      </Button>
-                    </div>
-                  ))}
-                </Form.Group>
-              </Card.Body>
-            </Card>
-          </Col>
-      </Row>
-      {/* Inferiores 1*/}
-      {/* Cuadrantes 3*/}
-      <Row className="g-3" style={{ height: '40vh', marginTop: '20px', marginBottom: '20px' }}> {/* ** */}
-      <Col md={6} style={{ padding: '10px' }}>
-              <Card style={{ height: '100%' }}>
+        {selectedTask && (
+          <Row>
+            {/* Primer cuadrante: Detalles de la tarea */}
+            <Col md={4}>
+              <Card className="mb-3">
                 <Card.Body>
                   <Form.Group controlId="panelMarca">
                     <Form.Label>Marca del Panel</Form.Label>
@@ -355,17 +312,54 @@ const TaskForm: React.FC = () => {
                   </Form.Group>
                 </Card.Body>
               </Card>
+
+              {/* Segundo cuadrante: Descripción del sistema */}
+              <Card className="mb-3">
+                <Card.Body>
+                  <Form.Group controlId="description">
+                    <Form.Label>Descripción del Sistema</Form.Label>
+                    <Form.Control
+                      as="textarea"
+                      rows={5}
+                      value={description}
+                      onChange={(e) => setDescription(e.target.value)}
+                    />
+                  </Form.Group>
+                </Card.Body>
+              </Card>
+
+              {/* Cuadrante adicional: Subir imágenes */}
+              <Card>
+                <Card.Body>
+                  <Form.Group>
+                    <Form.Label>Subir Imágenes de Inicio y Término de Trabajo</Form.Label>
+                    {workDays.map((day, index) => (
+                      <div key={index} style={{ display: index <= uploadedDays ? 'block' : 'none' }}>
+                        <Form.Label>{`Día: ${format(day, 'dd/MM/yyyy')}`}</Form.Label>
+                        <Row>
+                          <Col sm={6}>
+                            <input type="file" onChange={(e) => handleImageChange(e, 'inicio', index)} />
+                          </Col>
+                          <Col sm={6}>
+                            <input type="file" onChange={(e) => handleImageChange(e, 'termino', index)} />
+                          </Col>
+                        </Row>
+                        <Button variant="success" className="mt-2" onClick={() => handleSaveDayImages(index)}>
+                          Guardar Imágenes del Día {format(day, 'dd/MM/yyyy')}
+                        </Button>
+                      </div>
+                    ))}
+                  </Form.Group>
+                </Card.Body>
+              </Card>
             </Col>
 
-      {/* Cuadrantes 4*/}
-      <Col md={6} style={{ padding: '10px' }}> {/* ** */}
-        <Card style={{ height: '100%', overflowY: 'auto' }}> {/* ** */}
-          <Card.Body>
-            {lazos > 0 && renderDetectorFields()}
-          </Card.Body>
-        </Card>
-      </Col>
-      </Row>
+            {/* Tercer cuadrante: Lista de detectores */}
+            <Col md={8}>
+              {lazos > 0 && renderDetectorFields()}
+            </Col>
+          </Row>
+        )}
 
         {selectedTask && (
           <Button type="submit" variant="primary" className="mt-3">

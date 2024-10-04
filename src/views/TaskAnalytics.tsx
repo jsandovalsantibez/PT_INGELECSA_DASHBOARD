@@ -255,68 +255,38 @@ const TaskAnalytics: React.FC = () => {
             </div>
           </div>
         </Col>
-        {/* Segundo cuadrante con mapa */}
+        {/* Segundo y Tercer cuadrantes con mapa y otro contenido adicional */}
         <Col md={6} style={{ padding: '10px' }}>
-          <div style={{ backgroundColor: 'white', padding: '20px', borderRadius: '8px', height: '100%' }}>
-            <h5>Mapa de Santiago</h5>
-            <MapContainer center={[-33.4489, -70.6693]} zoom={12} style={{ height: 'calc(100% - 40px)', width: '100%' }}>
-              <TileLayer
-                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-              />
-              {markerCoords && (
-                <Marker position={[markerCoords.lat, markerCoords.lng]} icon={markerIcon}>
-                  <Popup>{selectedTask?.taskCode}</Popup>
-                </Marker>
-              )}
-            </MapContainer>
-          </div>
-        </Col>
-        {/* Tercer cuadrante con imágenes de perfil */}
-        <Col md={6} style={{ padding: '10px' }}>
-          <div
-            style={{
-              backgroundColor: 'white',
-              padding: '20px',
-              borderRadius: '8px',
-              height: '100%',
-              overflowX: 'auto',
-              whiteSpace: 'nowrap',
-            }}
-          >
-            <h5>Técnicos Asignados</h5>
-            <div style={{ display: 'flex', flexWrap: 'nowrap' }}>
-              {assignedUsers.map((user) => (
-                <div key={user.id} style={{ textAlign: 'center', marginRight: '15px' }}>
-                  <img
-                    src={user.photoURL}
-                    style={{
-                      width: '60px',
-                      height: '60px',
-                      objectFit: 'cover',
-                      borderRadius: '50%',
-                    }}
-                    alt={user.fullName}
-                  />
-                  <p style={{ marginTop: '10px', fontSize: '14px' }}>{user.fullName}</p>
+          <Row style={{ height: '50%', marginBottom: '10px' }}>
+            <Col md={12}>
+              <div style={{ backgroundColor: 'white', padding: '20px', borderRadius: '8px', height: '100%' }}>
+                <h5>Mapa de Santiago</h5>
+                <div style={{ height: 'calc(100% - 30px)', overflow: 'hidden', borderRadius: '8px' }}>
+                  <MapContainer center={[-33.4489, -70.6693]} zoom={12} style={{ height: '100%', width: '100%' }}>
+                    <TileLayer
+                      url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                      attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                    />
+                    {markerCoords && (
+                      <Marker position={[markerCoords.lat, markerCoords.lng]} icon={markerIcon}>
+                        <Popup>{selectedTask?.taskCode}</Popup>
+                      </Marker>
+                    )}
+                  </MapContainer>
                 </div>
-              ))}
-            </div>
-          </div>
+              </div>
+            </Col>
+          </Row>
+          <Row style={{ height: '50%' }}>
+            <Col md={12}>
+              <div style={{ backgroundColor: 'white', padding: '20px', borderRadius: '8px', height: '100%' }}>
+                <h5>Contenido Adicional</h5>
+                <p>Aquí puedes agregar otro contenido relacionado con la tarea seleccionada.</p>
+              </div>
+            </Col>
+          </Row>
         </Col>
-        {/* Cuarto cuadrante sin carrusel de imágenes */}
-        <Col md={6} style={{ padding: '10px' }}>
-          <div
-            style={{
-              backgroundColor: 'white',
-              padding: '20px',
-              borderRadius: '8px',
-              height: '100%',
-            }}
-          >
-            {/* Este cuadrante estaba dedicado al carrusel de imágenes, ahora está vacío */}
-          </div>
-        </Col>
+
       </Row>
     </Container>
   );

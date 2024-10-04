@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Container, Table, Button, Modal, Form, Alert, Image } from 'react-bootstrap';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { doc, setDoc, getDocs, deleteDoc, updateDoc, collection } from 'firebase/firestore';
-import { auth, db } from '../firebase'; // 'storage' eliminado
+import { auth, db } from '../firebase';
 
 const CreateUser: React.FC = () => {
   const [users, setUsers] = useState<any[]>([]);
@@ -148,14 +148,13 @@ const CreateUser: React.FC = () => {
           {users.map((user, index) => (
             <tr key={index}>
               <td className="text-center">
-                <Image
-                  src={user.photoURL || 'https://via.placeholder.com/50'}
-                  roundedCircle
-                  width="50"
-                  height="50"
-                  alt={user.fullName}
-                  style={{ objectFit: 'cover' }}
-                />
+                <div style={{ width: '50px', height: '50px', overflow: 'hidden', borderRadius: '50%', display: 'inline-block' }}>
+                  <Image
+                    src={user.photoURL || 'https://via.placeholder.com/50'}
+                    alt={user.fullName}
+                    style={{ objectFit: 'cover', width: '100%', height: '100%' }}
+                  />
+                </div>
               </td>
               <td>{user.fullName}</td>
               <td>{user.rut}</td>

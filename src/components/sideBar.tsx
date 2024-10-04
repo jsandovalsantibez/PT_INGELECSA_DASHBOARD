@@ -5,7 +5,8 @@ import { ref, getDownloadURL } from 'firebase/storage';
 import { getFirestore, doc, getDoc } from 'firebase/firestore';
 import { storage } from '../firebase';
 import Profile from '../views/Profile';
-import { FaTasks, FaPlus, FaUserPlus, FaClipboardList, FaBars } from 'react-icons/fa';
+import { FaTasks, FaPlus, FaUserPlus, FaClipboardList, FaBars, FaUserCircle } from 'react-icons/fa';
+import '../styles/style_sidebar.css';
 
 interface SidebarProps {
   setActiveView: (view: string) => void;
@@ -62,96 +63,85 @@ const Sidebar: React.FC<SidebarProps> = ({ setActiveView, handleLogout }) => {
   };
 
   return (
-    <div style={{ display: 'flex', height: '100vh' }}>
+    <div className={`sidebar-container ${collapsed ? 'collapsed' : ''}`}>
       <div
-        className={`d-flex flex-column bg-dark text-white p-3 ${collapsed ? 'collapsed-sidebar' : ''}`}
-        style={{ width: collapsed ? '80px' : '250px', transition: 'width 0.3s', alignItems: 'center' }}
+        className="d-flex flex-column text-white"
+        style={{ width: collapsed ? '60px' : '240px', transition: 'width 0.3s', alignItems: 'center' }}
       >
-        {/* Imagen de perfil y nombre de usuario */}
-        <div className="text-center mb-5" style={{ cursor: 'pointer' }} onClick={handleProfileClick}>
+        {/* Imagen de perfil */}
+        <div className="profile-image-container text-center mb-4">
           <img
-            src={photoURL || 'https://via.placeholder.com/150'}
+            src={photoURL || 'https://via.placeholder.com/60'}
             alt="Imagen de perfil"
             className="rounded-circle"
-            style={{
-              width: collapsed ? '40px' : '100px',
-              height: collapsed ? '40px' : '100px',
-              objectFit: 'cover',
-            }}
           />
-          {!collapsed && <h5 className="mt-2" style={{ fontSize: '1.3em' }}>{user?.displayName}</h5>}
         </div>
 
         {/* Grupo de navegación centrado verticalmente */}
-        <div className="flex-grow-1 d-flex flex-column justify-content-center">
-          <Nav className="flex-column align-items-center">
+        <div className="flex-grow-1 d-flex flex-column justify-content-start">
+          <Nav className="flex-column align-items-center w-100">
             <Nav.Link
-              className="text-white d-flex align-items-center justify-content-center mb-4"
-              style={{ width: '100%', textAlign: 'center' }}
+              className="sidebar-link d-flex flex-column align-items-center mb-5"
               onClick={() => setActiveView('taskcardlist')}
             >
-              <FaTasks size={collapsed ? 30 : 45} />
-              {!collapsed && <span className="ms-3" style={{ fontSize: '22px' }}>Task</span>}
+              <FaTasks className="nav-icons" />
+              {!collapsed && <span className="nav-text text-white">Task</span>}
             </Nav.Link>
             <Nav.Link
-              className="text-white d-flex align-items-center justify-content-center mb-4"
-              style={{ width: '100%', textAlign: 'center' }}
+              className="sidebar-link d-flex flex-column align-items-center mb-5"
               onClick={() => setActiveView('taskanalytics')}
             >
-              <FaClipboardList size={collapsed ? 30 : 45} />
-              {!collapsed && <span className="ms-3" style={{ fontSize: '22px' }}>Análisis</span>}
+              <FaClipboardList className="nav-icons" />
+              {!collapsed && <span className="nav-text text-white">Análisis</span>}
             </Nav.Link>
             <Nav.Link
-              className="text-white d-flex align-items-center justify-content-center mb-4"
-              style={{ width: '100%', textAlign: 'center' }}
+              className="sidebar-link d-flex flex-column align-items-center mb-5"
               onClick={() => setActiveView('taskform')}
             >
-              <FaClipboardList size={collapsed ? 30 : 45} />
-              {!collapsed && <span className="ms-3" style={{ fontSize: '22px' }}>Formulario</span>}
+              <FaClipboardList className="nav-icons" />
+              {!collapsed && <span className="nav-text text-white">Formulario</span>}
             </Nav.Link>
           </Nav>
         </div>
 
         {/* Separación y segundo grupo de navegación */}
         {userRole === 'gerente_operaciones' && (
-          <div className="mt-4">
+          <div className="mt-5">
             <hr className="text-white" />
-            <Nav className="flex-column align-items-center">
+            <Nav className="flex-column align-items-center w-100">
               <Nav.Link
-                className="text-white d-flex align-items-center justify-content-center mb-4"
-                style={{ width: '100%', textAlign: 'center' }}
+                className="sidebar-link d-flex flex-column align-items-center mb-5"
                 onClick={() => setActiveView('createtask')}
               >
-                <FaPlus size={collapsed ? 30 : 45} />
-                {!collapsed && <span className="ms-3" style={{ fontSize: '22px' }}>Crear Tarea</span>}
+                <FaPlus className="nav-icons" />
+                {!collapsed && <span className="nav-text text-white">Crear Tarea</span>}
               </Nav.Link>
               <Nav.Link
-                className="text-white d-flex align-items-center justify-content-center mb-4"
-                style={{ width: '100%', textAlign: 'center' }}
+                className="sidebar-link d-flex flex-column align-items-center mb-5"
                 onClick={() => setActiveView('createuser')}
               >
-                <FaUserPlus size={collapsed ? 30 : 45} />
-                {!collapsed && <span className="ms-3" style={{ fontSize: '22px' }}>Gestor de Usuarios</span>}
+                <FaUserPlus className="nav-icons" />
+                {!collapsed && <span className="nav-text text-white">Gestor de Usuarios</span>}
               </Nav.Link>
             </Nav>
           </div>
         )}
-
-        {/* Botón de colapso siempre presente */}
-        <div className="mt-auto text-center d-flex justify-content-center align-items-center" style={{ height: '60px' }}>
-          <Button variant="link" className="text-white" onClick={() => setCollapsed(!collapsed)}>
-            <FaBars size={collapsed ? 25 : 30} />
-          </Button>
-        </div>
-
-        {/* Modal del perfil */}
-        <Modal show={showProfileModal} onHide={handleCloseProfileModal} size="lg">
-          <Modal.Header closeButton></Modal.Header>
-          <Modal.Body>
-            <Profile handleLogout={handleLogout} />
-          </Modal.Body>
-        </Modal>
       </div>
+
+      {/* Botón de colapso siempre presente */}
+      <div className="mt-auto text-center d-flex justify-content-center align-items-center" style={{ height: '50px' }}>
+        <Button variant="link" className="text-white" onClick={() => setCollapsed(!collapsed)}>
+          <FaBars size={30} />
+        </Button>
+      </div>
+
+      {/* Modal del perfil */}
+      <Modal show={showProfileModal} onHide={handleCloseProfileModal} size="lg">
+        <Modal.Header closeButton></Modal.Header>
+        <Modal.Body>
+          <Profile handleLogout={handleLogout} />
+        </Modal.Body>
+      </Modal>
     </div>
   );
 };

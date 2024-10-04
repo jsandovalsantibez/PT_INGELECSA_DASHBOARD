@@ -1,34 +1,82 @@
-.sidebar {
-    height: 100vh; /* Ocupa el 100% de la altura de la pantalla */
-    overflow-y: auto; /* Para permitir el scroll si es necesario */
-  }
-
-.d-flex {
-    display: flex;
-    height: 100vh;
-}
-  
-.flex-grow-1 {
-    flex-grow: 1;
-    overflow-y: auto;
-}
-
 .sidebar-container {
-    height: 100vh;
-    background-color: #343a40;
-  }
-  
-  .sidebar-nav {
-    color: white;
-  }
-  
-  .sidebar-link {
-    color: white;
-    padding: 10px;
-  }
-  
-  .sidebar-link:hover {
-    background-color: #31363a;
-    text-decoration: none;
-  }
-  
+  height: 100vh;
+  width: 240px;
+  background: linear-gradient(145deg, #26344f, #192e4c);
+  border-right: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.7);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 15px 0;
+  color: white;
+  transition: width 0.3s ease, background 0.3s ease;
+}
+
+.sidebar-container.collapsed {
+  width: 60px;
+  background: #0d1a28; /* Color más oscuro cuando está colapsada */
+}
+
+.profile-image-container {
+  padding: 10px;
+  width: 60px;
+  height: 60px;
+  overflow: hidden;
+}
+
+img.rounded-circle {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+  border: 2px solid #fff;
+}
+
+.profile-button-container {
+  width: 100%;
+  padding: 10px;
+}
+
+.profile-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 5px;
+  font-size: 1.2em;
+  color: white;
+  border: 1px solid #fff;
+  background-color: #3a5e90;
+  border-radius: 5px;
+  transition: background-color 0.3s ease;
+}
+
+.profile-button:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+  text-decoration: none;
+  color: white;
+}
+
+.sidebar-link {
+  color: #efefef;
+  padding: 15px;
+  font-size: 1.2em;
+  transition: background-color 0.3s ease, color 0.3s ease;
+  width: 100%;
+  text-align: center;
+}
+
+.sidebar-link:hover {
+  background-color: #5d6d7e;
+  color: #ecf0f1;
+  text-decoration: none;
+}
+
+.nav-icons {
+  font-size: 35px;
+  color: #ffffff;
+}
+
+.nav-text {
+  font-size: 1.4em;
+  margin-top: 5px;
+}
