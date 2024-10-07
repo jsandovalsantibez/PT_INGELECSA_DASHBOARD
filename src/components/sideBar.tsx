@@ -5,7 +5,7 @@ import { ref, getDownloadURL } from 'firebase/storage';
 import { getFirestore, doc, getDoc } from 'firebase/firestore';
 import { storage } from '../firebase';
 import Profile from '../views/Profile';
-import { FaTasks, FaPlus, FaUserPlus, FaClipboardList, FaBars, FaUserCircle } from 'react-icons/fa';
+import { FaTasks, FaPlus, FaUserPlus, FaClipboardList, FaBars, FaSignOutAlt } from 'react-icons/fa';
 import '../styles/style_sidebar.css';
 
 interface SidebarProps {
@@ -126,6 +126,17 @@ const Sidebar: React.FC<SidebarProps> = ({ setActiveView, handleLogout }) => {
             </Nav>
           </div>
         )}
+      </div>
+
+      {/* Botón de cerrar sesión */}
+      <div className="logout-button-container text-center mb-5">
+        <Nav.Link
+          className="sidebar-link d-flex flex-column align-items-center"
+          onClick={handleLogout}
+        >
+          <FaSignOutAlt className="nav-icons" />
+          {!collapsed && <span className="nav-text text-white">Cerrar Sesión</span>}
+        </Nav.Link>
       </div>
 
       {/* Botón de colapso siempre presente */}

@@ -1,0 +1,134 @@
+/* Ajustes de contenedor principal */
+.container-fluid {
+    overflow: hidden;
+    background-color: #1a2b4c;
+    min-height: 100vh;
+    padding: 20px;
+    padding-bottom: 30px; /* Para asegurar que haya espacio suficiente al fondo */
+    color: #ffffff;
+  }
+  
+  /* Encabezado */
+  h2 {
+    color: #ffffff;
+    margin-bottom: 10px;
+  }
+  
+  hr {
+    border-top: 3px solid #ffffff;
+    margin-bottom: 30px;
+  }
+  
+  /* Estilo de los cuadrantes */
+  .quadrant-container {
+    padding: 20px;
+    margin-bottom: 20px; /* Margen inferior consistente */
+    border-radius: 8px;
+    background-color: #ffffff;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Sombras para un efecto más moderno */
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+  }
+  
+  .quadrant-container:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2); /* Elevación al pasar el mouse */
+  }
+  
+  /* Gráfico principal */
+  .chart-container {
+    height: 350px;
+    width: 350px;
+    margin-top: 20px;
+  }
+  
+  .chart-details {
+    margin-left: 30px;
+    font-size: 1.1em;
+  }
+  
+  .chart-details h5 {
+    font-weight: bold;
+  }
+  
+  /* Bordes de los selectores */
+  .form-group label {
+    font-weight: bold;
+    color: #ffffff;
+  }
+  
+  .form-control {
+    border-radius: 8px;
+    border: 1px solid #ccc;
+    transition: border-color 0.3s ease;
+  }
+  
+  .form-control:focus {
+    border-color: #1a73e8;
+    box-shadow: 0 0 5px rgba(26, 115, 232, 0.3);
+  }
+  
+  /* Gráficos adicionales */
+  .additional-charts {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-around;
+    margin-top: 20px;
+  }
+  
+  .additional-chart-container {
+    height: 150px;
+    width: 150px;
+    margin: 10px;
+    padding: 10px;
+    border-radius: 8px;
+    background-color: #ffffff;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  }
+  
+  /* Mapa */
+  .map-container {
+    height: calc(100% - 30px);
+    overflow: hidden;
+    border-radius: 8px;
+  }
+  
+  /* Sección de contenido adicional */
+  .additional-content {
+    padding: 20px;
+    border-radius: 8px;
+    background-color: #ffffff;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  }
+  
+  /* Botones */
+  button {
+    border-radius: 8px;
+    background-color: #1a73e8;
+    color: #ffffff;
+    padding: 10px 15px;
+    font-weight: bold;
+    transition: background-color 0.3s ease, box-shadow 0.3s ease;
+  }
+  
+  button:hover {
+    background-color: #155ab6;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  }
+  
+  /* Responsividad */
+  @media (max-width: 768px) {
+    .chart-container {
+      width: 100%;
+      height: 300px;
+    }
+  
+    .additional-chart-container {
+      width: 100%;
+      margin: 10px 0;
+    }
+  
+    .map-container {
+      height: 200px;
+    }
+  }
+  

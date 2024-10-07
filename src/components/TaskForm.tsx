@@ -36,7 +36,6 @@ const TaskForm: React.FC = () => {
   const [workDays, setWorkDays] = useState<Date[]>([]);
   const [uploadedDays, setUploadedDays] = useState<number>(0);
 
-  // Función para obtener las tareas desde Firestore
   useEffect(() => {
     const fetchTasks = async () => {
       try {
@@ -74,7 +73,6 @@ const TaskForm: React.FC = () => {
       setDescription('');
       setCurrentLazo(1);
 
-      // Cargar días de trabajo
       if (task.taskPeriod && task.taskPeriod.length === 2) {
         const [start, end] = task.taskPeriod;
         const days = eachDayOfInterval({
@@ -83,7 +81,6 @@ const TaskForm: React.FC = () => {
         });
         setWorkDays(days);
 
-        // Verificar imágenes subidas previamente
         await checkUploadedImages(task, days);
       }
     }
@@ -95,7 +92,6 @@ const TaskForm: React.FC = () => {
       const taskDoc = await getDoc(taskDocRef);
       const taskData = taskDoc.data() as Task;
 
-      // Verificar cuántos días ya tienen imágenes subidas
       let count = 0;
       for (let i = 0; i < days.length; i++) {
         const dayKey = format(days[i], 'yyyyMMdd');
@@ -111,7 +107,6 @@ const TaskForm: React.FC = () => {
     }
   };
 
-  // Crear campos de detectores en función de la cantidad de lazos seleccionada
   useEffect(() => {
     const updatedDetectorsByLazo: { [key: string]: string[] } = {};
     for (let i = 1; i <= lazos; i++) {
@@ -126,18 +121,20 @@ const TaskForm: React.FC = () => {
     const detectors = detectorsByLazo[lazoKey] || Array(50).fill('no_hecho');
 
     return (
-      <Card style={{ height: '100%', overflowY: 'auto', padding: '10px', width: '100%' }}> {/* ** */}
+      <div style={{ height: '100%', overflowY: 'auto', padding: '10px', width: '100%' }}>
         <Card.Body>
           <Card.Title>Dispositivos del Lazo {currentLazo}</Card.Title>
           <Row>
-            {detectors.map((state, index) => (
-              <Col key={`${lazoKey}D${index + 1}`} xs={12} className="mb-3">
-                <div style={{ display: 'flex', alignItems: 'center' }}>
-                  <Form.Label style={{ marginRight: '15px' }}>{`L${currentLazo}D${index + 1}`}</Form.Label>
+            {/* Primera columna de detectores (1-25) */}
+            <Col xs={6}>
+              {detectors.slice(0, 25).map((state, index) => (
+                <div key={`${lazoKey}D${index + 1}`} style={{ display: 'flex', alignItems: 'center', marginBottom: '10px' }}>
+                  <Form.Label style={{ marginRight: '10px' }}>{`L${currentLazo}D${index + 1}`}</Form.Label>
                   <Button
                     variant={state === 'hecho' ? 'success' : 'outline-success'}
                     onClick={() => handleStateChange(lazoKey, index, 'hecho')}
                     className="mr-2"
+                    size="sm"
                   >
                     Hecho
                   </Button>
@@ -145,21 +142,54 @@ const TaskForm: React.FC = () => {
                     variant={state === 'no_hecho' ? 'danger' : 'outline-danger'}
                     onClick={() => handleStateChange(lazoKey, index, 'no_hecho')}
                     className="mr-2"
+                    size="sm"
                   >
                     No Hecho
                   </Button>
                   <Button
                     variant={state === 'obstruido' ? 'warning' : 'outline-warning'}
                     onClick={() => handleStateChange(lazoKey, index, 'obstruido')}
+                    size="sm"
                   >
                     Obstruido
                   </Button>
                 </div>
-              </Col>
-            ))}
+              ))}
+            </Col>
+            {/* Segunda columna de detectores (26-50) */}
+            <Col xs={6}>
+              {detectors.slice(25, 50).map((state, index) => (
+                <div key={`${lazoKey}D${index + 26}`} style={{ display: 'flex', alignItems: 'center', marginBottom: '10px' }}>
+                  <Form.Label style={{ marginRight: '10px' }}>{`L${currentLazo}D${index + 26}`}</Form.Label>
+                  <Button
+                    variant={state === 'hecho' ? 'success' : 'outline-success'}
+                    onClick={() => handleStateChange(lazoKey, index + 25, 'hecho')}
+                    className="mr-2"
+                    size="sm"
+                  >
+                    Hecho
+                  </Button>
+                  <Button
+                    variant={state === 'no_hecho' ? 'danger' : 'outline-danger'}
+                    onClick={() => handleStateChange(lazoKey, index + 25, 'no_hecho')}
+                    className="mr-2"
+                    size="sm"
+                  >
+                    No Hecho
+                  </Button>
+                  <Button
+                    variant={state === 'obstruido' ? 'warning' : 'outline-warning'}
+                    onClick={() => handleStateChange(lazoKey, index + 25, 'obstruido')}
+                    size="sm"
+                  >
+                    Obstruido
+                  </Button>
+                </div>
+              ))}
+            </Col>
           </Row>
         </Card.Body>
-      </Card>
+      </div>
     );
   };
 
@@ -179,8 +209,8 @@ const TaskForm: React.FC = () => {
           panelMarca,
           lazos,
           detectorsByLazo,
-          description, // Guardar la descripción en la base de datos
-          active: true, // Cambiar el estado a activo al guardar el formulario
+          description,
+          active: true,
         });
 
         alert('Formulario guardado con éxito');
@@ -234,7 +264,7 @@ const TaskForm: React.FC = () => {
       await updateDoc(taskDocRef, {
         [`images.${selectedDay}.inicio`]: inicioImageUrl,
         [`images.${selectedDay}.termino`]: terminoImageUrl,
-        active: true, // Actualizar el estado a activo después de subir las imágenes
+        active: true,
       });
 
       alert(`Imágenes del día ${format(workDays[dayIndex], 'dd/MM/yyyy')} guardadas con éxito.`);
@@ -245,15 +275,14 @@ const TaskForm: React.FC = () => {
   };
 
   return (
-    <div style={{ padding: '20px', backgroundColor: '#1a2b4c', minHeight: '100vh', overflow: 'hidden' }}> {/* ** */}
+    <div style={{ padding: '20px', backgroundColor: '#1a2b4c', minHeight: '100vh', overflow: 'hidden' }}>
       <h2 style={{ color: 'white', marginBottom: '10px' }}>Formulario de trabajo</h2>
       <hr style={{ borderTop: '3px solid white', marginBottom: '30px' }} />
 
       <Form onSubmit={handleSubmit}>
-        {/* SUPERIORES 1*/}
-        {/* Cuadrante 1*/}
         <Row className="g-3" style={{ height: '45vh' }}>
-        <Col md={6} style={{ padding: '10px' }}>
+          {/* Cuadrante 1 */}
+          <Col md={6} style={{ padding: '10px' }}>
             <Card style={{ height: '100%' }}>
               <Card.Body>
                 <Form.Group controlId="taskSelect">
@@ -284,8 +313,8 @@ const TaskForm: React.FC = () => {
             </Card>
           </Col>
 
-        {/* Cuadrante 2*/}
-        <Col md={6} style={{ padding: '10px' }}>
+          {/* Cuadrante 2 */}
+          <Col md={6} style={{ padding: '10px' }}>
             <Card style={{ height: '100%' }}>
               <Card.Body>
                 <Form.Group>
@@ -310,62 +339,62 @@ const TaskForm: React.FC = () => {
               </Card.Body>
             </Card>
           </Col>
-      </Row>
-      {/* Inferiores 1*/}
-      {/* Cuadrantes 3*/}
-      <Row className="g-3" style={{ height: '40vh', marginTop: '20px', marginBottom: '20px' }}> {/* ** */}
-      <Col md={6} style={{ padding: '10px' }}>
-              <Card style={{ height: '100%' }}>
-                <Card.Body>
-                  <Form.Group controlId="panelMarca">
-                    <Form.Label>Marca del Panel</Form.Label>
-                    <Form.Control as="select" value={panelMarca} onChange={(e) => setPanelMarca(e.target.value)}>
-                      <option value="">Seleccione la Marca</option>
-                      <option value="Notifire">Notifire</option>
-                      <option value="Edwards">Edwards</option>
-                      <option value="Mircom">Mircom</option>
-                    </Form.Control>
-                  </Form.Group>
+        </Row>
 
-                  <Form.Group controlId="lazos">
-                    <Form.Label>Número de Lazos</Form.Label>
-                    <Form.Control as="select" value={lazos} onChange={(e) => setLazos(parseInt(e.target.value))}>
-                      {[...Array(5)].map((_, i) => (
-                        <option key={i + 1} value={i + 1}>
-                          {i + 1}
-                        </option>
-                      ))}
-                    </Form.Control>
-                  </Form.Group>
+        <Row className="g-3" style={{ height: '40vh', marginTop: '20px', marginBottom: '20px' }}>
+          {/* Cuadrante 3 */}
+          <Col md={6} style={{ padding: '10px' }}>
+            <Card style={{ height: '100%' }}>
+              <Card.Body>
+                <Form.Group controlId="panelMarca">
+                  <Form.Label>Marca del Panel</Form.Label>
+                  <Form.Control as="select" value={panelMarca} onChange={(e) => setPanelMarca(e.target.value)}>
+                    <option value="">Seleccione la Marca</option>
+                    <option value="Notifire">Notifire</option>
+                    <option value="Edwards">Edwards</option>
+                    <option value="Mircom">Mircom</option>
+                  </Form.Control>
+                </Form.Group>
 
-                  <Form.Group controlId="currentLazo">
-                    <Form.Label>Lazo</Form.Label>
-                    <Form.Control
-                      as="select"
-                      value={currentLazo}
-                      onChange={(e) => setCurrentLazo(parseInt(e.target.value))}
-                      disabled={lazos === 0}
-                    >
-                      {[...Array(lazos)].map((_, i) => (
-                        <option key={i + 1} value={i + 1}>
-                          {i + 1}
-                        </option>
-                      ))}
-                    </Form.Control>
-                  </Form.Group>
-                </Card.Body>
-              </Card>
-            </Col>
+                <Form.Group controlId="lazos">
+                  <Form.Label>Número de Lazos</Form.Label>
+                  <Form.Control as="select" value={lazos} onChange={(e) => setLazos(parseInt(e.target.value))}>
+                    {[...Array(5)].map((_, i) => (
+                      <option key={i + 1} value={i + 1}>
+                        {i + 1}
+                      </option>
+                    ))}
+                  </Form.Control>
+                </Form.Group>
 
-      {/* Cuadrantes 4*/}
-      <Col md={6} style={{ padding: '10px' }}> {/* ** */}
-        <Card style={{ height: '100%', overflowY: 'auto' }}> {/* ** */}
-          <Card.Body>
-            {lazos > 0 && renderDetectorFields()}
-          </Card.Body>
-        </Card>
-      </Col>
-      </Row>
+                <Form.Group controlId="currentLazo">
+                  <Form.Label>Lazo</Form.Label>
+                  <Form.Control
+                    as="select"
+                    value={currentLazo}
+                    onChange={(e) => setCurrentLazo(parseInt(e.target.value))}
+                    disabled={lazos === 0}
+                  >
+                    {[...Array(lazos)].map((_, i) => (
+                      <option key={i + 1} value={i + 1}>
+                        {i + 1}
+                      </option>
+                    ))}
+                  </Form.Control>
+                </Form.Group>
+              </Card.Body>
+            </Card>
+          </Col>
+
+          {/* Cuadrante 4 */}
+          <Col md={6} style={{ padding: '10px' }}>
+            <Card style={{ height: '100%', overflowY: 'auto' }}>
+              <Card.Body>
+                {lazos > 0 && renderDetectorFields()}
+              </Card.Body>
+            </Card>
+          </Col>
+        </Row>
 
         {selectedTask && (
           <Button type="submit" variant="primary" className="mt-3">
