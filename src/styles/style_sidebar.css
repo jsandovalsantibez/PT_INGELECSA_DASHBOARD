@@ -1,6 +1,6 @@
 .sidebar-container {
   height: 100vh;
-  width: 240px;
+  width: 180px;
   background: linear-gradient(145deg, #26344f, #192e4c);
   border-right: 1px solid rgba(255, 255, 255, 0.2);
   box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.7);
@@ -14,7 +14,7 @@
 
 .sidebar-container.collapsed {
   width: 60px;
-  background: #0d1a28; /* Color más oscuro cuando está colapsada */
+  background: linear-gradient(145deg, #26344f, #192e4c); /* Color más oscuro cuando está colapsada */
 }
 
 .profile-image-container {

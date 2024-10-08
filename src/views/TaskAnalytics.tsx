@@ -7,6 +7,7 @@ import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+import '../styles/style_analytic.css';
 
 // Registrar componentes de Chart.js
 ChartJS.register(ArcElement, Tooltip, Legend);
@@ -174,6 +175,50 @@ const TaskAnalytics: React.FC = () => {
     );
   };
 
+  const colorsByLazo: { [key: string]: string } = {
+    L1: '#860e0e', // Rojo Naranja
+    L2: '#0a7958', // Verde
+    L3: '#058fa8', // Azul
+    L4: '#fdff71', // Amarillo
+    L5: '#6e0479', // Rosa
+  };
+  
+  const renderLazoCharts = () => {
+    if (!selectedTask || !selectedTask.detectorsByLazo) return null;
+  
+    const lazos = Object.keys(selectedTask.detectorsByLazo).sort(); // Ordenar los lazos por nombre
+  
+    return (
+      <div className="lazo-grid">
+        {lazos.map((lazo, index) => {
+          const lazoData = getLazoDetectorsData(lazo);
+          const customColor = colorsByLazo[lazo] || '#FFA500'; // Asigna un color único por lazo
+          return (
+            <div key={index} className="chart-container-lazo">
+              <h6>{`Lazo ${lazo}`}</h6>
+              <Pie
+                data={{
+                  labels: ['Hecho', 'No Hecho', 'Obstruido'],
+                  datasets: [
+                    {
+                      data: [lazoData.hecho, lazoData.no_hecho, lazoData.obstruido],
+                      backgroundColor: [customColor, '#1A2B4C', '#A9A9A9'],
+                    },
+                  ],
+                }}
+                options={{ responsive: true, maintainAspectRatio: false }}
+              />
+            </div>
+          );
+        })}
+      </div>
+    );
+  };
+  
+  console.log('Selected Task:', selectedTask);
+  console.log('Detectors by Lazo:', selectedTask?.detectorsByLazo);
+
+
   return (
     <Container fluid style={{ overflow: 'hidden', backgroundColor: '#1a2b4c', minHeight: '100vh', padding: '20px' }}>
       <Row>
@@ -186,7 +231,7 @@ const TaskAnalytics: React.FC = () => {
       <Row style={{ height: 'calc(100vh - 150px)' }}>
         {/* Primer cuadrante con dropdown y gráfico */}
         <Col md={6} style={{ padding: '10px' }}>
-          <div style={{ backgroundColor: 'white', padding: '20px', borderRadius: '8px', height: '100%' }}>
+          <div className="quadrant-container">
             <Form.Group controlId="taskSelect" className="mb-3">
               <Form.Label>Selecciona una Tarea para Ver los Detectores</Form.Label>
               <Form.Control as="select" onChange={(e) => handleTaskSelect(e.target.value)}>
@@ -198,64 +243,24 @@ const TaskAnalytics: React.FC = () => {
                 ))}
               </Form.Control>
             </Form.Group>
-            <Form.Group controlId="chartSelect">
-              <Form.Label>Selecciona el Gráfico</Form.Label>
-              <Form.Control as="select" onChange={(e) => handleChartSelect(e.target.value)}>
-                <option value="Gráfico General">Gráfico General</option>
-                {selectedTask && selectedTask.detectorsByLazo && (
-                  Object.keys(selectedTask.detectorsByLazo).map((lazoKey) => (
-                    <option key={lazoKey} value={lazoKey}>
-                      {lazoKey}
-                    </option>
-                  ))
-                )}
-              </Form.Control>
-            </Form.Group>
-            {/* Mostrar gráfico seleccionado */}
-            <div style={{ display: 'flex', alignItems: 'center', marginTop: '20px' }}>
-              <div style={{ height: '400px', width: '400px' }}>
-                {selectedChart === 'Gráfico General' ? (
-                  <Pie
-                    data={{
-                      labels: ['Hecho', 'No Hecho', 'Obstruido'],
-                      datasets: [
-                        {
-                          data: [combinedData.hecho, combinedData.no_hecho, combinedData.obstruido],
-                          backgroundColor: ['#FFA500', '#1A2B4C', '#A9A9A9'], // Colores: naranja, azul marino, gris
-                        },
-                      ],
-                    }}
-                    options={{ responsive: true, maintainAspectRatio: false }}
-                  />
-                ) : (
-                  <Pie
-                    data={{
-                      labels: ['Hecho', 'No Hecho', 'Obstruido'],
-                      datasets: [
-                        {
-                          data: [
-                            getLazoDetectorsData(selectedChart).hecho,
-                            getLazoDetectorsData(selectedChart).no_hecho,
-                            getLazoDetectorsData(selectedChart).obstruido,
-                          ],
-                          backgroundColor: ['#FFA500', '#1A2B4C', '#A9A9A9'], // Colores: naranja, azul marino, gris
-                        },
-                      ],
-                    }}
-                    options={{ responsive: true, maintainAspectRatio: false }}
-                  />
-                )}
-              </div>
-              {/* Detalles del gráfico */}
-              <div style={{ marginLeft: '30px' }}>
-                {selectedChart === 'Gráfico General'
-                  ? renderChartDetails(combinedData)
-                  : renderChartDetails(getLazoDetectorsData(selectedChart))}
-              </div>
+            <div className="chart-container-1">
+              <Pie
+                data={{
+                  labels: ['Hecho', 'No Hecho', 'Obstruido'],
+                  datasets: [
+                    {
+                      data: [combinedData.hecho, combinedData.no_hecho, combinedData.obstruido],
+                      backgroundColor: ['#FFA500', '#1A2B4C', '#A9A9A9'],
+                    },
+                  ],
+                }}
+                options={{ responsive: true, maintainAspectRatio: false }}
+              />
             </div>
+            {renderChartDetails(combinedData)}
           </div>
         </Col>
-        {/* Segundo y Tercer cuadrantes con mapa y otro contenido adicional */}
+        {/* Segundo y Tercer cuadrantes con mapa y gráficos adicionales */}
         <Col md={6} style={{ padding: '10px' }}>
           <Row style={{ height: '50%', marginBottom: '10px' }}>
             <Col md={12}>
@@ -278,15 +283,14 @@ const TaskAnalytics: React.FC = () => {
             </Col>
           </Row>
           <Row style={{ height: '50%' }}>
-            <Col md={12}>
+            <Col md={12} style={{ padding: '10px' }}>
               <div style={{ backgroundColor: 'white', padding: '20px', borderRadius: '8px', height: '100%' }}>
-                <h5>Contenido Adicional</h5>
-                <p>Aquí puedes agregar otro contenido relacionado con la tarea seleccionada.</p>
+                <h5>Gráficos de Lazos</h5>
+                <div>{renderLazoCharts()}</div>
               </div>
             </Col>
           </Row>
         </Col>
-
       </Row>
     </Container>
   );
