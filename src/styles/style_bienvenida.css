@@ -1,64 +1,102 @@
 /* Carrusel */
 .carousel-wrapper {
-    width: 100%; /* Cambia 100vw por 100% para que se ajuste al contenedor */
-    height: auto;
-    overflow: hidden;
-    margin: 0; /* Asegúrate de que no haya márgenes que puedan causar desbordamiento */
-    padding: 0; /* Asegúrate de que no haya padding adicional */
+  width: 100%;
+  height: auto;
+  overflow: hidden;
+  margin: 0;
+  padding: 0;
 }
 
 .carousel-item img {
-    width: 100%; /* Se mantiene igual para que la imagen cubra el 100% del contenedor */
-    height: auto;
-    object-fit: cover;
-    max-height: 500px; /* Mantén la altura máxima */
+  width: 100%;
+  height: auto;
+  object-fit: cover;
+  max-height: 500px;
 }
 
-/* Sección de cards debajo del carrusel */
-/* Sección de cards debajo del carrusel */
-.cards-section {
-    background: linear-gradient(180deg, #002366 0%, #000000 100%);
-    padding: 80px 0;
-    min-height: 800px; /* 4 veces el largo del carrusel */
-    position: relative;
+/* Sección de estadísticas */
+.statistics-section {
+  background-color: #1a1a1a;
+  color: white;
+  padding: 50px 0;
+  display: flex;
+  justify-content: center;
 }
 
-
-/* Elementos flotantes animados */
-.floating-elements {
-    position: absolute;
-    top: 20%;
-    left: 50%;
-    transform: translate(-50%, -50%);
+.statistics-container {
+  display: flex;
+  justify-content: space-between;
+  width: 90%;
+  align-items: center;
 }
 
-.float-circle {
-    width: 100px;
-    height: 100px;
-    background-color: rgba(255, 99, 132, 0.6);
-    border-radius: 50%;
-    position: absolute;
-    animation: float 6s ease-in-out infinite;
+.statistics-text {
+  max-width: 50%;
 }
 
-.float-square {
-    width: 100px;
-    height: 100px;
-    background-color: rgba(54, 162, 235, 0.6);
-    position: absolute;
-    left: 150px;
-    animation: float 4s ease-in-out infinite;
+.statistics-card {
+  background-color: #f7d27a;
+  color: black;
+  padding: 30px;
+  border-radius: 10px;
+  text-align: center;
 }
 
-/* Animación de flotación */
-@keyframes float {
-    0% {
-        transform: translateY(0);
-    }
-    50% {
-        transform: translateY(-20px);
-    }
-    100% {
-        transform: translateY(0);
-    }
+.statistics-card h1 {
+  font-size: 4rem;
+}
+
+.statistics-card h4 {
+  margin: 10px 0;
+}
+
+/* Sección de servicios */
+.services-section {
+  padding: 60px 0;
+  background-color: #f7f7f7;
+  text-align: center;
+}
+
+.services-container {
+  display: flex;
+  justify-content: space-around;
+  flex-wrap: wrap;
+}
+
+.service-card {
+  width: 20%;
+  background: white;
+  padding: 20px;
+  margin: 10px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.service-card img {
+  width: 50px;
+  margin-bottom: 15px;
+}
+
+.service-card h3 {
+  font-size: 1.2rem;
+  margin-bottom: 10px;
+}
+
+/* Responsividad */
+@media (max-width: 768px) {
+  .services-container {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .service-card {
+    width: 80%;
+  }
+
+  .statistics-container {
+    flex-direction: column;
+  }
+
+  .statistics-card {
+    margin-top: 20px;
+  }
 }

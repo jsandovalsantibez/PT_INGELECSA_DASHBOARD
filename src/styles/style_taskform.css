@@ -1,79 +1,55 @@
-/* Estilos para la estructura del formulario */
-.card {
-    margin: 10px;
-    border-radius: 10px;
-    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
+/* Asegura que los cuadrantes mantengan su tamaño */
+.task-container {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr); /* Dos columnas en pantallas grandes */
+  gap: 20px;
+  height: auto;
+  margin-bottom: 1%;
+}
+
+.task-card {
+  height: 40vh; /* Establece un tamaño fijo para los cuadrantes */
+  width: 100%;  /* Hace que las cards ocupen todo el ancho disponible */
+  min-height: 40vh;
+  overflow: hidden;
+}
+
+.task-form {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  height: 100%;
+}
+
+.card-body {
+  overflow-y: auto; /* Asegura que el contenido interno pueda desplazarse */
+  max-height: 100%; /* Limita el contenido al tamaño del cuadrante */
+}
+
+/* Asegura que el cuadrante 4 tenga un scroll interno */
+.detector-card {
+  height: 100%;
+  overflow-y: auto;
+}
+
+button {
+  margin-right: 5px;
+}
+
+/* Responsividad para pantallas pequeñas (móviles) */
+@media (max-width: 768px) {
+  .task-container {
+    grid-template-columns: 1fr; /* Una columna en pantallas pequeñas */
+    grid-template-rows: auto;
+    gap: 20px;
   }
-  
-  .container {
-    margin-top: 20px;
+
+  .task-card {
+    height: auto; /* Permitir que los cuadrantes sean más flexibles en altura */
+    min-height: 40vh;
+    width: 100%;  /* Que ocupen todo el ancho disponible */
   }
-  
-  /* Carrusel */
-  .carousel-wrapper {
-    width: 100%;
-    height: auto;
-    overflow: hidden;
-    margin: 0;
-    padding: 0;
-  }
-  
-  .carousel-item img {
-    width: 100%;
-    height: auto;
-    object-fit: cover;
-    max-height: 500px;
-  }
-  
-  /* Sección de cards debajo del carrusel */
-  .cards-section {
-    background: linear-gradient(180deg, #002366 0%, #000000 100%);
-    padding: 80px 0;
-    min-height: 800px;
-    position: relative;
-  }
-  
-  /* Checkbox Styling */
-  input[type="checkbox"] {
-    transform: scale(1.5);
-  }
-  
-  /* Elementos flotantes animados */
-  .floating-elements {
-    position: absolute;
-    top: 20%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-  }
-  
-  .float-circle {
-    width: 100px;
-    height: 100px;
-    background-color: rgba(255, 99, 132, 0.6);
-    border-radius: 50%;
-    position: absolute;
-    animation: float 6s ease-in-out infinite;
-  }
-  
-  .float-square {
-    width: 100px;
-    height: 100px;
-    background-color: rgba(54, 162, 235, 0.6);
-    position: absolute;
-    left: 150px;
-    animation: float 4s ease-in-out infinite;
-  }
-  
-  /* Animación de flotación */
-  @keyframes float {
-    0% {
-      transform: translateY(0);
-    }
-    50% {
-      transform: translateY(-20px);
-    }
-    100% {
-      transform: translateY(0);
-    }
-  }
-  
+}
+
+
+

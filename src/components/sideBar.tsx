@@ -85,7 +85,7 @@ const Sidebar: React.FC<SidebarProps> = ({ setActiveView, handleLogout }) => {
               onClick={() => setActiveView('taskcardlist')}
             >
               <FaTasks className="nav-icons" />
-              {!collapsed && <span className="nav-text text-white">Task</span>}
+              {!collapsed && <span className="nav-text text-white">Tareas</span>}
             </Nav.Link>
             <Nav.Link
               className="sidebar-link d-flex flex-column align-items-center mb-5"

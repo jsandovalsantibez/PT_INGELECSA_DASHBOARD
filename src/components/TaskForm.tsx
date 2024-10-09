@@ -280,127 +280,126 @@ const TaskForm: React.FC = () => {
       <hr style={{ borderTop: '3px solid white', marginBottom: '30px' }} />
 
       <Form onSubmit={handleSubmit}>
-        <Row className="g-3" style={{ height: '45vh' }}>
-          {/* Cuadrante 1 */}
-          <Col md={6} style={{ padding: '10px' }}>
-            <Card style={{ height: '100%' }}>
-              <Card.Body>
-                <Form.Group controlId="taskSelect">
-                  <Form.Label>Seleccionar Tarea</Form.Label>
-                  <Form.Control
-                    as="select"
-                    value={selectedTask?.id || ''}
-                    onChange={(e) => handleTaskSelect(e.target.value)}
-                  >
-                    <option value="">Seleccione una tarea</option>
-                    {tasks.map(task => (
-                      <option key={task.id} value={task.id}>
-                        {task.taskCode}
-                      </option>
-                    ))}
-                  </Form.Control>
-                </Form.Group>
-                <Form.Group controlId="description">
-                  <Form.Label>Descripción del Sistema</Form.Label>
-                  <Form.Control
-                    as="textarea"
-                    rows={5}
-                    value={description}
-                    onChange={(e) => setDescription(e.target.value)}
-                  />
-                </Form.Group>
-              </Card.Body>
-            </Card>
-          </Col>
-
-          {/* Cuadrante 2 */}
-          <Col md={6} style={{ padding: '10px' }}>
-            <Card style={{ height: '100%' }}>
-              <Card.Body>
-                <Form.Group>
-                  <Form.Label>Subir Imágenes de Inicio y Término de Trabajo</Form.Label>
-                  {workDays.map((day, index) => (
-                    <div key={index} style={{ display: index <= uploadedDays ? 'block' : 'none' }}>
-                      <Form.Label>{`Día: ${format(day, 'dd/MM/yyyy')}`}</Form.Label>
-                      <Row>
-                        <Col sm={6}>
-                          <input type="file" onChange={(e) => handleImageChange(e, 'inicio', index)} />
-                        </Col>
-                        <Col sm={6}>
-                          <input type="file" onChange={(e) => handleImageChange(e, 'termino', index)} />
-                        </Col>
-                      </Row>
-                      <Button variant="success" className="mt-2" onClick={() => handleSaveDayImages(index)}>
-                        Guardar Imágenes del Día {format(day, 'dd/MM/yyyy')}
-                      </Button>
-                    </div>
+      <Row className="task-container">
+        {/* Cuadrante 1 */}
+        <Col md={6} className="task-card">
+          <Card className="task-form">
+            <Card.Body>
+              <Form.Group controlId="taskSelect">
+                <Form.Label>Seleccionar Tarea</Form.Label>
+                <Form.Control
+                  as="select"
+                  value={selectedTask?.id || ''}
+                  onChange={(e) => handleTaskSelect(e.target.value)}
+                >
+                  <option value="">Seleccione una tarea</option>
+                  {tasks.map(task => (
+                    <option key={task.id} value={task.id}>
+                      {task.taskCode}
+                    </option>
                   ))}
-                </Form.Group>
-              </Card.Body>
-            </Card>
-          </Col>
-        </Row>
+                </Form.Control>
+              </Form.Group>
+              <Form.Group controlId="description">
+                <Form.Label>Descripción del Sistema</Form.Label>
+                <Form.Control
+                  as="textarea"
+                  rows={5}
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                />
+              </Form.Group>
+              {selectedTask && (
+        <Button type="submit" variant="primary" className="mt-3">
+          Guardar Formulario
+        </Button>
+      )}
+            </Card.Body>
+          </Card>
+        </Col>
 
-        <Row className="g-3" style={{ height: '40vh', marginTop: '20px', marginBottom: '20px' }}>
-          {/* Cuadrante 3 */}
-          <Col md={6} style={{ padding: '10px' }}>
-            <Card style={{ height: '100%' }}>
-              <Card.Body>
-                <Form.Group controlId="panelMarca">
-                  <Form.Label>Marca del Panel</Form.Label>
-                  <Form.Control as="select" value={panelMarca} onChange={(e) => setPanelMarca(e.target.value)}>
-                    <option value="">Seleccione la Marca</option>
-                    <option value="Notifire">Notifire</option>
-                    <option value="Edwards">Edwards</option>
-                    <option value="Mircom">Mircom</option>
-                  </Form.Control>
-                </Form.Group>
+        {/* Cuadrante 2 */}
+        <Col md={6} className="task-card">
+          <Card className="task-form">
+            <Card.Body>
+              <Form.Group>
+                <Form.Label>Subir Imágenes de Inicio y Término de Trabajo</Form.Label>
+                {workDays.map((day, index) => (
+                  <div key={index} style={{ display: index <= uploadedDays ? 'block' : 'none' }}>
+                    <Form.Label>{`Día: ${format(day, 'dd/MM/yyyy')}`}</Form.Label>
+                    <Row>
+                      <Col sm={6}>
+                        <input type="file" onChange={(e) => handleImageChange(e, 'inicio', index)} />
+                      </Col>
+                      <Col sm={6}>
+                        <input type="file" onChange={(e) => handleImageChange(e, 'termino', index)} />
+                      </Col>
+                    </Row>
+                    <Button variant="success" className="mt-2" onClick={() => handleSaveDayImages(index)}>
+                      Guardar Imágenes del Día {format(day, 'dd/MM/yyyy')}
+                    </Button>
+                  </div>
+                ))}
+              </Form.Group>
+            </Card.Body>
+          </Card>
+        </Col>
+      </Row>
 
-                <Form.Group controlId="lazos">
-                  <Form.Label>Número de Lazos</Form.Label>
-                  <Form.Control as="select" value={lazos} onChange={(e) => setLazos(parseInt(e.target.value))}>
-                    {[...Array(5)].map((_, i) => (
-                      <option key={i + 1} value={i + 1}>
-                        {i + 1}
-                      </option>
-                    ))}
-                  </Form.Control>
-                </Form.Group>
+      <Row className="task-container">
+        {/* Cuadrante 3 */}
+        <Col md={6} className="task-card">
+          <Card className="task-form">
+            <Card.Body>
+              <Form.Group controlId="panelMarca">
+                <Form.Label>Marca del Panel</Form.Label>
+                <Form.Control as="select" value={panelMarca} onChange={(e) => setPanelMarca(e.target.value)}>
+                  <option value="">Seleccione la Marca</option>
+                  <option value="Notifire">Notifire</option>
+                  <option value="Edwards">Edwards</option>
+                  <option value="Mircom">Mircom</option>
+                </Form.Control>
+              </Form.Group>
 
-                <Form.Group controlId="currentLazo">
-                  <Form.Label>Lazo</Form.Label>
-                  <Form.Control
-                    as="select"
-                    value={currentLazo}
-                    onChange={(e) => setCurrentLazo(parseInt(e.target.value))}
-                    disabled={lazos === 0}
-                  >
-                    {[...Array(lazos)].map((_, i) => (
-                      <option key={i + 1} value={i + 1}>
-                        {i + 1}
-                      </option>
-                    ))}
-                  </Form.Control>
-                </Form.Group>
-              </Card.Body>
-            </Card>
-          </Col>
+              <Form.Group controlId="lazos">
+                <Form.Label>Número de Lazos</Form.Label>
+                <Form.Control as="select" value={lazos} onChange={(e) => setLazos(parseInt(e.target.value))}>
+                  {[...Array(5)].map((_, i) => (
+                    <option key={i + 1} value={i + 1}>
+                      {i + 1}
+                    </option>
+                  ))}
+                </Form.Control>
+              </Form.Group>
 
-          {/* Cuadrante 4 */}
-          <Col md={6} style={{ padding: '10px' }}>
-            <Card style={{ height: '100%', overflowY: 'auto' }}>
-              <Card.Body>
-                {lazos > 0 && renderDetectorFields()}
-              </Card.Body>
-            </Card>
-          </Col>
-        </Row>
+              <Form.Group controlId="currentLazo">
+                <Form.Label>Lazo</Form.Label>
+                <Form.Control
+                  as="select"
+                  value={currentLazo}
+                  onChange={(e) => setCurrentLazo(parseInt(e.target.value))}
+                  disabled={lazos === 0}
+                >
+                  {[...Array(lazos)].map((_, i) => (
+                    <option key={i + 1} value={i + 1}>
+                      {i + 1}
+                    </option>
+                  ))}
+                </Form.Control>
+              </Form.Group>
+            </Card.Body>
+          </Card>
+        </Col>
 
-        {selectedTask && (
-          <Button type="submit" variant="primary" className="mt-3">
-            Guardar Formulario
-          </Button>
-        )}
+        {/* Cuadrante 4 con scroll interno */}
+        <Col md={6} className="task-card">
+          <Card className="task-form detector-card">
+            <Card.Body>
+              {lazos > 0 && renderDetectorFields()}
+            </Card.Body>
+          </Card>
+        </Col>
+      </Row>
       </Form>
     </div>
   );

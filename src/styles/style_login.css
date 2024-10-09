@@ -20,19 +20,19 @@
   .login-card {
     width: 100%;
     max-width: 400px;
-    padding: 2rem;
-    background-color: rgba(255, 255, 255, 0.9); /* Fondo blanco semitransparente */
+    padding: 5rem;
+    background-color: rgba(157, 165, 180, 0.9); /* Fondo blanco semitransparente */
     border-radius: 10px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Sombra para el card */
+    box-shadow: 0 4px 8px rgba(255, 255, 255, 0.2); /* Sombra para el card */
     position: relative;
     z-index: 2; /* Coloca el card sobre el overlay */
   }
   
   .logo-link {
     position: absolute;
-    top: 20px; /* Ajusta según necesites */
+    top: 30px; /* Ajusta según necesites */
     left: 50%;
-    transform: translateX(-50%);
+    transform: translateX(-60%);
     z-index: 3; /* Coloca el logo sobre todo */
   }
   

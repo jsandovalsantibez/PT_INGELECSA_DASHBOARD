@@ -49,10 +49,10 @@ const Login: React.FC = () => {
         {/* Card con transparencia */}
         <Card className="login-card">
           <Card.Body>
-            <h2 className="text-center mb-4">Iniciar Sesión</h2>
+            <h2 style={{ color: 'white' }} className="text-center mb-4">Iniciar Sesión</h2>
             <Form onSubmit={handleLogin}>
               <Form.Group controlId="formBasicEmail">
-                <Form.Label>Email</Form.Label>
+                <Form.Label style={{ color: 'white' }}>Email</Form.Label>
                 <Form.Control 
                   type="email" 
                   value={email} 
@@ -62,7 +62,7 @@ const Login: React.FC = () => {
                 />
               </Form.Group>
               <Form.Group controlId="formBasicPassword" className="mt-3">
-                <Form.Label>Password</Form.Label>
+                <Form.Label style={{ color: 'white' }}>Contraseña</Form.Label>
                 <Form.Control 
                   type="password" 
                   value={password} 
@@ -71,7 +71,7 @@ const Login: React.FC = () => {
                   required 
                 />
               </Form.Group>
-              <Button variant="primary" type="submit" className="w-100 mt-4">
+              <Button variant="secondary" type="submit" className="w-100 mt-4">
                 Login
               </Button>
             </Form>

@@ -126,7 +126,7 @@ const HomePage: React.FC = () => {
     <div style={{ padding: '20px', backgroundColor: '#1a2b4c', minHeight: '100vh' }}>
       <Row style={{ marginBottom: '20px' }}>
         <Col md={12}>
-          <h2 style={{ color: 'white' }}>HomePage</h2>
+          <h2 style={{ color: 'white' }}>Página Inicial</h2>
           <hr style={{ borderTop: '3px solid white' }} />
         </Col>
       </Row>
