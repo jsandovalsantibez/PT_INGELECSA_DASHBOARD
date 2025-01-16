@@ -29,26 +29,16 @@ interface Task {
   [key: string]: any;
 }
 
-interface User {
-  id: string;
-  fullName: string;
-  photoURL: string;
-}
-
 const TaskAnalytics: React.FC = () => {
   const { user } = useAuth();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
-  const [selectedChart, setSelectedChart] = useState<string>('Gráfico General');
-  const [loading, setLoading] = useState<boolean>(true);
   const [markerCoords, setMarkerCoords] = useState<{ lat: number; lng: number } | null>(null);
-  const [assignedUsers, setAssignedUsers] = useState<User[]>([]);
 
   useEffect(() => {
     const fetchTasks = async () => {
       if (!user) {
         console.error('No hay usuario autenticado.');
-        setLoading(false);
         return;
       }
 
@@ -68,34 +58,16 @@ const TaskAnalytics: React.FC = () => {
         })) as Task[];
 
         setTasks(tasksData);
-        setLoading(false);
       } catch (error) {
         console.error('Error al obtener las tareas:', error);
-        setLoading(false);
       }
     };
 
     fetchTasks();
   }, [user]);
 
-  const fetchAssignedUsers = async (userIds: string[]) => {
-    try {
-      const db = getFirestore();
-      const usersCollection = collection(db, 'users');
-      const usersSnapshot = await getDocs(usersCollection);
-      const usersData = usersSnapshot.docs
-        .map((doc) => ({ id: doc.id, ...doc.data() }))
-        .filter((user) => userIds.includes(user.id)) as User[];
-
-      setAssignedUsers(usersData);
-    } catch (error) {
-      console.error('Error al obtener los detalles de los usuarios:', error);
-    }
-  };
-
   const handleTaskSelect = async (taskId: string) => {
     try {
-      setLoading(true);
       const db = getFirestore();
       const taskDocRef = doc(db, 'taskCards', taskId);
       const taskDoc = await getDoc(taskDocRef);
@@ -110,22 +82,12 @@ const TaskAnalytics: React.FC = () => {
         } else {
           setMarkerCoords(null);
         }
-
-        // Obtener técnicos asignados
-        if (taskData.assignedPersonnel) {
-          fetchAssignedUsers(taskData.assignedPersonnel);
-        }
       } else {
         console.error('No se encontró la tarea con el ID proporcionado.');
       }
     } catch (error) {
       console.error('Error al obtener la tarea:', error);
     }
-    setLoading(false);
-  };
-
-  const handleChartSelect = (chartType: string) => {
-    setSelectedChart(chartType);
   };
 
   // Obtener datos combinados de los detectores (hecho, no hecho, obstruido)
@@ -140,84 +102,7 @@ const TaskAnalytics: React.FC = () => {
     return { hecho: hechoCount, no_hecho: noHechoCount, obstruido: obstruidoCount };
   };
 
-  // Obtener datos de detectores por lazo (hecho, no hecho, obstruido)
-  const getLazoDetectorsData = (lazoKey: string) => {
-    if (!selectedTask || !selectedTask.detectorsByLazo || !selectedTask.detectorsByLazo[lazoKey]) {
-      return { hecho: 0, no_hecho: 0, obstruido: 0 };
-    }
-
-    const lazoDetectors = selectedTask.detectorsByLazo[lazoKey];
-    const hechoCount = lazoDetectors.filter((det) => det === 'hecho').length;
-    const noHechoCount = lazoDetectors.filter((det) => det === 'no_hecho').length;
-    const obstruidoCount = lazoDetectors.filter((det) => det === 'obstruido').length;
-
-    return { hecho: hechoCount, no_hecho: noHechoCount, obstruido: obstruidoCount };
-  };
-
   const combinedData = getCombinedDetectorsData();
-
-  const renderChartDetails = (data: { hecho: number; no_hecho: number; obstruido: number }) => {
-    const total = data.hecho + data.no_hecho + data.obstruido;
-
-    return (
-      <div style={{ marginLeft: '20px', fontSize: '1.2em' }}>
-        <h5>Detalles del Gráfico</h5>
-        <div style={{ color: '#FFA500' }}>
-          Hecho: {data.hecho} detectores ({((data.hecho / total) * 100).toFixed(2)}%)
-        </div>
-        <div style={{ color: '#1A2B4C' }}>
-          No Hecho: {data.no_hecho} detectores ({((data.no_hecho / total) * 100).toFixed(2)}%)
-        </div>
-        <div style={{ color: '#A9A9A9' }}>
-          Obstruido: {data.obstruido} detectores ({((data.obstruido / total) * 100).toFixed(2)}%)
-        </div>
-      </div>
-    );
-  };
-
-  const colorsByLazo: { [key: string]: string } = {
-    L1: '#860e0e', // Rojo Naranja
-    L2: '#0a7958', // Verde
-    L3: '#058fa8', // Azul
-    L4: '#fdff71', // Amarillo
-    L5: '#6e0479', // Rosa
-  };
-  
-  const renderLazoCharts = () => {
-    if (!selectedTask || !selectedTask.detectorsByLazo) return null;
-  
-    const lazos = Object.keys(selectedTask.detectorsByLazo).sort(); // Ordenar los lazos por nombre
-  
-    return (
-      <div className="lazo-grid">
-        {lazos.map((lazo, index) => {
-          const lazoData = getLazoDetectorsData(lazo);
-          const customColor = colorsByLazo[lazo] || '#FFA500'; // Asigna un color único por lazo
-          return (
-            <div key={index} className="chart-container-lazo">
-              <h6>{`Lazo ${lazo}`}</h6>
-              <Pie
-                data={{
-                  labels: ['Hecho', 'No Hecho', 'Obstruido'],
-                  datasets: [
-                    {
-                      data: [lazoData.hecho, lazoData.no_hecho, lazoData.obstruido],
-                      backgroundColor: [customColor, '#1A2B4C', '#A9A9A9'],
-                    },
-                  ],
-                }}
-                options={{ responsive: true, maintainAspectRatio: false }}
-              />
-            </div>
-          );
-        })}
-      </div>
-    );
-  };
-  
-  console.log('Selected Task:', selectedTask);
-  console.log('Detectors by Lazo:', selectedTask?.detectorsByLazo);
-
 
   return (
     <Container fluid style={{ overflow: 'hidden', backgroundColor: '#1a2b4c', minHeight: '100vh', padding: '20px' }}>
@@ -227,9 +112,7 @@ const TaskAnalytics: React.FC = () => {
           <hr style={{ borderTop: '3px solid white', marginBottom: '30px' }} />
         </Col>
       </Row>
-      {/* Contenedor de cuadrantes */}
       <Row style={{ height: 'calc(100vh - 150px)' }}>
-        {/* Primer cuadrante con dropdown y gráfico */}
         <Col md={6} style={{ padding: '10px' }}>
           <div className="quadrant-container">
             <Form.Group controlId="taskSelect" className="mb-3">
@@ -257,39 +140,25 @@ const TaskAnalytics: React.FC = () => {
                 options={{ responsive: true, maintainAspectRatio: false }}
               />
             </div>
-            {renderChartDetails(combinedData)}
           </div>
         </Col>
-        {/* Segundo y Tercer cuadrantes con mapa y gráficos adicionales */}
         <Col md={6} style={{ padding: '10px' }}>
-          <Row style={{ height: '50%', marginBottom: '10px' }}>
-            <Col md={12}>
-              <div style={{ backgroundColor: 'white', padding: '20px', borderRadius: '8px', height: '100%' }}>
-                <h5>Mapa de Santiago</h5>
-                <div style={{ height: 'calc(100% - 30px)', overflow: 'hidden', borderRadius: '8px' }}>
-                  <MapContainer center={[-33.4489, -70.6693]} zoom={12} style={{ height: '100%', width: '100%' }}>
-                    <TileLayer
-                      url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                      attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                    />
-                    {markerCoords && (
-                      <Marker position={[markerCoords.lat, markerCoords.lng]} icon={markerIcon}>
-                        <Popup>{selectedTask?.taskCode}</Popup>
-                      </Marker>
-                    )}
-                  </MapContainer>
-                </div>
-              </div>
-            </Col>
-          </Row>
-          <Row style={{ height: '50%' }}>
-            <Col md={12} style={{ padding: '10px' }}>
-              <div style={{ backgroundColor: 'white', padding: '20px', borderRadius: '8px', height: '100%' }}>
-                <h5>Gráficos de Lazos</h5>
-                <div>{renderLazoCharts()}</div>
-              </div>
-            </Col>
-          </Row>
+          <div style={{ backgroundColor: 'white', padding: '20px', borderRadius: '8px', height: '100%' }}>
+            <h5>Mapa de Santiago</h5>
+            <div style={{ height: 'calc(100% - 30px)', overflow: 'hidden', borderRadius: '8px' }}>
+              <MapContainer center={[-33.4489, -70.6693]} zoom={12} style={{ height: '100%', width: '100%' }}>
+                <TileLayer
+                  url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                  attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                />
+                {markerCoords && (
+                  <Marker position={[markerCoords.lat, markerCoords.lng]} icon={markerIcon}>
+                    <Popup>{selectedTask?.taskCode}</Popup>
+                  </Marker>
+                )}
+              </MapContainer>
+            </div>
+          </div>
         </Col>
       </Row>
     </Container>

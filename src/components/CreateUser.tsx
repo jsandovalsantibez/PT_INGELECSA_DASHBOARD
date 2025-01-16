@@ -1,17 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { Container, Table, Button, Modal, Form, Alert, Image, Row, Col } from 'react-bootstrap';
+import { Table, Button, Modal, Form, Alert, Image, Row, Col } from 'react-bootstrap';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
-import { doc, setDoc, getDocs, deleteDoc, updateDoc, collection } from 'firebase/firestore';
+import { doc, setDoc, getDocs, collection } from 'firebase/firestore';
 import { auth, db } from '../firebase';
 import '../styles/style_createuser.css';
 
 const CreateUser: React.FC = () => {
   const [users, setUsers] = useState<any[]>([]);
   const [showModal, setShowModal] = useState(false);
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [selectedUser, setSelectedUser] = useState<any>(null);
-  const [confirmName, setConfirmName] = useState('');
 
   // Estados del formulario de creación de usuario
   const [email, setEmail] = useState('');
@@ -24,23 +20,6 @@ const CreateUser: React.FC = () => {
 
   const handleOpenModal = () => setShowModal(true);
   const handleCloseModal = () => setShowModal(false);
-
-  // Abrir y cerrar modal de confirmación para eliminar usuario
-  const handleShowDeleteModal = (user: any) => {
-    setSelectedUser(user);
-    setShowDeleteModal(true);
-  };
-  const handleCloseDeleteModal = () => setShowDeleteModal(false);
-
-  // Abrir y cerrar modal para editar usuario
-  const handleShowEditModal = (user: any) => {
-    setSelectedUser(user);
-    setFullName(user.fullName);
-    setRut(user.rut);
-    setContactNumber(user.contactNumber);
-    setShowEditModal(true);
-  };
-  const handleCloseEditModal = () => setShowEditModal(false);
 
   // Función para obtener los usuarios registrados
   const fetchUsers = async () => {
@@ -92,40 +71,6 @@ const CreateUser: React.FC = () => {
     }
   };
 
-  // Función para manejar la edición del usuario
-  const handleEditUser = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    try {
-      if (selectedUser) {
-        const userDocRef = doc(db, 'users', selectedUser.id);
-        await updateDoc(userDocRef, { fullName, rut, contactNumber });
-        handleCloseEditModal();
-        fetchUsers();
-      }
-    } catch (err: any) {
-      setError(err.message);
-    }
-  };
-
-  // Función para manejar la eliminación del usuario
-  const handleDeleteUser = async () => {
-    if (confirmName !== selectedUser.fullName) {
-      setError('El nombre completo no coincide.');
-      return;
-    }
-
-    try {
-      const userDocRef = doc(db, 'users', selectedUser.id);
-      await deleteDoc(userDocRef);
-      handleCloseDeleteModal();
-      setConfirmName('');
-      fetchUsers();
-    } catch (err: any) {
-      setError(err.message);
-    }
-  };
-
   return (
     <div style={{ padding: '20px', backgroundColor: '#1a2b4c', minHeight: '100vh' }}>
       <Row style={{ marginBottom: '20px' }}>
@@ -145,7 +90,6 @@ const CreateUser: React.FC = () => {
             <th>RUT</th>
             <th>Email</th>
             <th>Número de Contacto</th>
-            <th>Acciones</th>
           </tr>
         </thead>
         <tbody>
@@ -164,18 +108,13 @@ const CreateUser: React.FC = () => {
               <td>{user.rut}</td>
               <td>{user.email}</td>
               <td>{user.contactNumber}</td>
-              <td>
-                <Button variant="outline-warning" className="me-2" onClick={() => handleShowEditModal(user)}>✏️</Button>
-                <Button variant="outline-danger" onClick={() => handleShowDeleteModal(user)}>🗑️</Button>
-              </td>
             </tr>
           ))}
         </tbody>
       </Table>
 
-      {/* Modales para agregar, editar y eliminar usuario */}
+      {/* Modal para agregar usuario */}
       <Modal show={showModal} onHide={handleCloseModal}>
-        {/* Modal para agregar */}
         <Modal.Header closeButton>
           <Modal.Title>Crear Nuevo Usuario</Modal.Title>
         </Modal.Header>
@@ -211,8 +150,6 @@ const CreateUser: React.FC = () => {
           </Form>
         </Modal.Body>
       </Modal>
-
-      {/* Resto de los modales... */}
     </div>
   );
 };

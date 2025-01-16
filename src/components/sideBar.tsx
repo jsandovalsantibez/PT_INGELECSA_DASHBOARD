@@ -54,9 +54,6 @@ const Sidebar: React.FC<SidebarProps> = ({ setActiveView, handleLogout }) => {
     }
   }, [user]);
 
-  const handleProfileClick = () => {
-    setShowProfileModal(true);
-  };
 
   const handleCloseProfileModal = () => {
     setShowProfileModal(false);

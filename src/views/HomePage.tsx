@@ -6,7 +6,6 @@ import moment from 'moment';
 import 'moment/locale/es';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
 import { Row, Col, Table, Image, Button, Modal } from 'react-bootstrap';
-import { useNavigate } from 'react-router-dom';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import '../styles/style_homepage.css';
 
@@ -45,13 +44,11 @@ const HomePage: React.FC = () => {
   const [events, setEvents] = useState<any[]>([]);
   const [notifications, setNotifications] = useState<Task[]>([]);
   const [users, setUsers] = useState<User[]>([]);
-  const [tasks, setTasks] = useState<Task[]>([]);
   const [loggedUser, setLoggedUser] = useState<User | null>(null);
   const [showModal, setShowModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
 
   const { user } = useAuth();
-  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchData = async () => {
@@ -66,7 +63,6 @@ const HomePage: React.FC = () => {
           ...doc.data(),
         })) as Task[];
 
-        setTasks(tasksList);
 
         const calendarEvents = tasksList.map(task => {
           if (task.taskPeriod && task.taskPeriod.length === 2) {

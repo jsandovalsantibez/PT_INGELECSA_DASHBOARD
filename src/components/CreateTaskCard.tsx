@@ -206,13 +206,6 @@ const CreateTaskCard: React.FC = () => {
     }
   };
 
-  const handleInputChange = (e: any) => {
-    const { name, value } = e.target;
-    setEditedTask((prevTask: any) => ({
-      ...prevTask,
-      [name]: value,
-    }));
-  };
 
   const handleCloseModal = () => {
     setShowModal(false);

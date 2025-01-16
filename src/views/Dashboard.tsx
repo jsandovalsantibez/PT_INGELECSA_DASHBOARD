@@ -1,42 +1,33 @@
 import React, { useEffect, useState } from 'react';
 import { onAuthStateChanged, signOut } from "firebase/auth";
-import { useNavigate, useParams } from 'react-router-dom';
-import { auth, db } from '../firebase';  // Importa 'db' en lugar de 'firestore'
+import { useNavigate } from 'react-router-dom';
+import { auth, db } from '../firebase';
 import { doc, getDoc } from "firebase/firestore";
 import Sidebar from '../components/sideBar';
 import TaskCardsList from './HomePage';
 import CreateTaskCard from '../components/CreateTaskCard';
 import HolaMundo from '../components/CreateUser';
 import TaskForm from '../components/TaskForm';
-import TaskAnalytics from './TaskAnalytics';  // Importamos el nuevo formulario
+import TaskAnalytics from './TaskAnalytics';
 
 const Dashboard: React.FC = () => {
   const [user, setUser] = useState<any>(null);
-  const [role, setRole] = useState<string>('');
-  const [activeView, setActiveView] = useState<string>('taskcardlist'); 
-  const { taskCode } = useParams<{ taskCode: string }>();  // Se añade taskCode para usarlo en TaskForm
-  const navigate = useNavigate(); 
+  const [activeView, setActiveView] = useState<string>('taskcardlist');
+  const navigate = useNavigate();
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       if (currentUser) {
         setUser(currentUser);
         try {
-          const userDocRef = doc(db, 'users', currentUser.uid);  // Usa 'db' en lugar de 'firestore'
+          const userDocRef = doc(db, 'users', currentUser.uid);
           const userDoc = await getDoc(userDocRef);
-          const userRole = userDoc.data()?.role;
-          const userName = userDoc.data()?.fullName || "Usuario";
-
-          console.log("Usuario logueado:", userName);
-          console.log(auth.currentUser?.uid);
-
-          setRole(userRole);
+          console.log("Usuario logueado:", userDoc.data()?.fullName || "Usuario");
         } catch (error) {
-          console.error('Error obteniendo el rol:', error);
+          console.error('Error obteniendo los datos del usuario:', error);
         }
       } else {
         setUser(null);
-        setRole('');
       }
     });
 
@@ -47,7 +38,7 @@ const Dashboard: React.FC = () => {
     try {
       await signOut(auth);
       alert("Sesión cerrada con éxito");
-      navigate('/'); 
+      navigate('/');
     } catch (error) {
       console.error("Error al cerrar sesión:", error);
     }
@@ -56,17 +47,17 @@ const Dashboard: React.FC = () => {
   const renderActiveView = () => {
     switch (activeView) {
       case 'taskcardlist':
-        return <TaskCardsList userRole={role} />;
+        return <TaskCardsList />;
       case 'createtask':
         return <CreateTaskCard />;
       case 'createuser':
         return <HolaMundo />;
-      case 'taskform':  // Nueva vista taskform
+      case 'taskform':
         return <TaskForm />;
       case 'taskanalytics':
         return <TaskAnalytics />;
       default:
-        return <TaskCardsList userRole={role} />;
+        return <TaskCardsList />;
     }
   };
 
