@@ -4,15 +4,13 @@ import { getFirestore, collection, getDocs, query, where, doc, getDoc } from 'fi
 import { Form, Container, Row, Col } from 'react-bootstrap';
 import { Pie } from 'react-chartjs-2';
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js';
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, ZoomControl } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import '../styles/style_analytic.css';
 
-// Registrar componentes de Chart.js
 ChartJS.register(ArcElement, Tooltip, Legend);
 
-// Registrar ícono de Leaflet para los marcadores
 const markerIcon = new L.Icon({
   iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
   iconSize: [25, 41],
@@ -22,10 +20,12 @@ const markerIcon = new L.Icon({
 
 interface Task {
   id: string;
+  taskCode?: string;
   detectorsByLazo?: { [key: string]: string[] };
   coordinates?: { lat: number; lng: number };
   assignedPersonnel?: string[];
   images?: { [key: string]: { inicio: string; termino: string } };
+  active?: boolean;
   [key: string]: any;
 }
 
@@ -41,7 +41,6 @@ const TaskAnalytics: React.FC = () => {
         console.error('No hay usuario autenticado.');
         return;
       }
-
       try {
         const db = getFirestore();
         const tasksCollection = collection(db, 'taskCards');
@@ -51,18 +50,15 @@ const TaskAnalytics: React.FC = () => {
           where('active', '==', true)
         );
         const tasksSnapshot = await getDocs(tasksQuery);
-
         const tasksData = tasksSnapshot.docs.map((doc) => ({
           id: doc.id,
           ...doc.data(),
         })) as Task[];
-
         setTasks(tasksData);
       } catch (error) {
         console.error('Error al obtener las tareas:', error);
       }
     };
-
     fetchTasks();
   }, [user]);
 
@@ -75,8 +71,6 @@ const TaskAnalytics: React.FC = () => {
       if (taskDoc.exists()) {
         const taskData = taskDoc.data();
         setSelectedTask({ id: taskDoc.id, ...taskData });
-
-        // Si existen coordenadas en la tarea, actualiza el marcador en el mapa
         if (taskData.coordinates) {
           setMarkerCoords(taskData.coordinates);
         } else {
@@ -90,35 +84,39 @@ const TaskAnalytics: React.FC = () => {
     }
   };
 
-  // Obtener datos combinados de los detectores (hecho, no hecho, obstruido)
+  // Combinar datos de detectores
   const getCombinedDetectorsData = () => {
-    if (!selectedTask || !selectedTask.detectorsByLazo) return { hecho: 0, no_hecho: 0, obstruido: 0 };
-
+    if (!selectedTask || !selectedTask.detectorsByLazo) {
+      return { hecho: 0, no_hecho: 0, obstruido: 0 };
+    }
     const detectors = Object.values(selectedTask.detectorsByLazo).flat();
-    const hechoCount = detectors.filter((det) => det === 'hecho').length;
-    const noHechoCount = detectors.filter((det) => det === 'no_hecho').length;
-    const obstruidoCount = detectors.filter((det) => det === 'obstruido').length;
-
+    const hechoCount = detectors.filter((d) => d === 'hecho').length;
+    const noHechoCount = detectors.filter((d) => d === 'no_hecho').length;
+    const obstruidoCount = detectors.filter((d) => d === 'obstruido').length;
     return { hecho: hechoCount, no_hecho: noHechoCount, obstruido: obstruidoCount };
   };
 
   const combinedData = getCombinedDetectorsData();
 
   return (
-    <Container fluid style={{ overflow: 'hidden', backgroundColor: '#1a2b4c', minHeight: '100vh', padding: '20px' }}>
+    <Container fluid className="analytic-container">
+      {/* Encabezado */}
       <Row>
-        <Col md={12}>
-          <h2 style={{ color: 'white', marginBottom: '10px' }}>Análisis de Tareas</h2>
-          <hr style={{ borderTop: '3px solid white', marginBottom: '30px' }} />
+        <Col xs={12}>
+          <h2 className="section-title">Análisis de Tareas</h2>
+          <hr className="section-hr" />
         </Col>
       </Row>
-      <Row style={{ height: 'calc(100vh - 150px)' }}>
-        <Col md={6} style={{ padding: '10px' }}>
-          <div className="quadrant-container">
+
+      {/* Contenido principal (gráfico y mapa) */}
+      <Row className="g-3">
+        {/* Columna izquierda: gráfico */}
+        <Col md={6} xs={12}>
+          <div className="analytic-card">
+            <h5 className="analytic-subtitle">Seleccionar Tarea</h5>
             <Form.Group controlId="taskSelect" className="mb-3">
-              <Form.Label>Selecciona una Tarea para Ver los Detectores</Form.Label>
               <Form.Control as="select" onChange={(e) => handleTaskSelect(e.target.value)}>
-                <option value="">Seleccionar...</option>
+                <option value="">-- Elige una tarea --</option>
                 {tasks.map((task) => (
                   <option key={task.id} value={task.id}>
                     {task.taskCode}
@@ -126,7 +124,8 @@ const TaskAnalytics: React.FC = () => {
                 ))}
               </Form.Control>
             </Form.Group>
-            <div className="chart-container-1">
+
+            <div className="chart-wrapper">
               <Pie
                 data={{
                   labels: ['Hecho', 'No Hecho', 'Obstruido'],
@@ -137,20 +136,31 @@ const TaskAnalytics: React.FC = () => {
                     },
                   ],
                 }}
-                options={{ responsive: true, maintainAspectRatio: false }}
+                options={{
+                  responsive: true,
+                  maintainAspectRatio: false,
+                }}
               />
             </div>
           </div>
         </Col>
-        <Col md={6} style={{ padding: '10px' }}>
-          <div style={{ backgroundColor: 'white', padding: '20px', borderRadius: '8px', height: '100%' }}>
-            <h5>Mapa de Santiago</h5>
-            <div style={{ height: 'calc(100% - 30px)', overflow: 'hidden', borderRadius: '8px' }}>
-              <MapContainer center={[-33.4489, -70.6693]} zoom={12} style={{ height: '100%', width: '100%' }}>
+
+        {/* Columna derecha: mapa */}
+        <Col md={6} xs={12}>
+          <div className="analytic-card">
+            <h5 className="analytic-subtitle">Mapa de Santiago</h5>
+            <div className="map-wrapper">
+              <MapContainer
+                center={[-33.4489, -70.6693]}
+                zoom={12}
+                style={{ height: '100%', width: '100%' }}
+                zoomControl={false} // Deshabilita el control por defecto
+              >
                 <TileLayer
-                  url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                  attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                   url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                    attribution="&copy; OpenStreetMap contributors"
                 />
+                <ZoomControl position="topright" />
                 {markerCoords && (
                   <Marker position={[markerCoords.lat, markerCoords.lng]} icon={markerIcon}>
                     <Popup>{selectedTask?.taskCode}</Popup>

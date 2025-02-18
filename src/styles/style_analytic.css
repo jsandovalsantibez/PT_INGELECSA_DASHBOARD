@@ -1,86 +1,68 @@
-.main-container {
-  overflow: hidden;
+/* Contenedor principal */
+.analytic-container {
   background-color: #1a2b4c;
   min-height: 100vh;
   padding: 20px;
-  padding-bottom: 30px;
-  color: #ffffff;
+  color: #fff;
 }
 
-h2 {
-  color: #ffffff;
+.section-title {
   margin-bottom: 10px;
 }
 
-hr {
+.section-hr {
   border-top: 3px solid #ffffff;
-  margin-bottom: 30px;
+  margin-bottom: 20px;
 }
 
-.quadrant-row {
-  display: flex;
-  align-items: stretch;
-  height: calc(100vh - 150px);
-}
-
-.quadrant-container {
-  background-color: #ffffff;  
+/* Tarjetas (contenedores blancos) */
+.analytic-card {
+  background-color: #ffffff;
+  border-radius: 8px;
   padding: 20px;
-  border-radius: 8px;
-  height: 100%;
+  color: #000; /* Texto en negro para que sea legible sobre fondo blanco */
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-start;
 }
 
-.chart-container-1 {
-  height: 350px;
-  width: 350px;
-  margin: 0 auto;
-  margin-top: 5%;
-  margin-bottom: 10%;
+/* Subtítulo dentro de cada tarjeta */
+.analytic-subtitle {
+  margin-bottom: 15px;
 }
 
-.chart-details {
-  margin-top: 20px;
-  text-align: center;
-  font-size: 1.1em;
-}
-
-.chart-container-lazo {
-  height: 200px; /* Aumentar el tamaño del gráfico */
-  width: 150px;  /* Aumentar el tamaño del gráfico */
-  margin: 0 auto;
-  margin-top: 20%;
-  padding: 5px;
-}
-
-.lazo-grid {
-  display: grid;
-  grid-template-columns: repeat(5, 1fr); /* Mantiene las 5 columnas */
-  gap: 15px;
-  align-items: center;
-}
-
-.map-container {
-  height: 100%;
+/* Contenedor del gráfico */
+.chart-wrapper {
   width: 100%;
+  height: 350px; /* Altura para el gráfico en pantallas grandes */
+  position: relative;
+  margin: 0 auto;
+}
+
+/* Contenedor del mapa */
+.map-wrapper {
+  width: 100%;
+  height: 400px; /* Altura fija para el mapa en pantallas grandes */
+  position: relative;
   border-radius: 8px;
+  overflow: hidden;
 }
 
+/* Responsividad */
 @media (max-width: 768px) {
-  .chart-container-lazo {
-    height: 120px; /* Ajustar tamaño para pantallas pequeñas */
-    width: 120px;  /* Ajustar tamaño para pantallas pequeñas */
+  .chart-wrapper {
+    height: 250px; /* Reducir altura del gráfico en móviles */
   }
-
-  .chart-container-lazo {
-    height: 100px;
-    width: 100px;
-  }
-
-  .lazo-grid {
-    grid-template-columns: repeat(2, 1fr); /* Dos columnas en pantallas pequeñas */
+  .map-wrapper {
+    height: 300px; /* Reducir altura del mapa en móviles */
   }
 }
+
+.leaflet-control-attribution {
+  display: none !important;
+}
+
+
+/* Oculta los controles de zoom de la esquina superior izquierda */
+.leaflet-top.leaflet-left .leaflet-control-zoom {
+  display: none !important;
+}
+

@@ -1,55 +1,77 @@
-/* Asegura que los cuadrantes mantengan su tamaño */
-.task-container {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr); /* Dos columnas en pantallas grandes */
-  gap: 20px;
-  height: auto;
-  margin-bottom: 1%;
+/* Contenedor principal */
+.task-form-container {
+  background-color: #1a2b4c;
+  min-height: 100vh;
+  padding: 20px;
+  overflow-x: hidden;
 }
 
-.task-card {
-  height: 40vh; /* Establece un tamaño fijo para los cuadrantes */
-  width: 100%;  /* Hace que las cards ocupen todo el ancho disponible */
-  min-height: 40vh;
-  overflow: hidden;
+/* Título */
+.form-title {
+  color: white;
+  text-align: center;
+  margin-bottom: 10px;
 }
 
-.task-form {
+/* Línea divisoria */
+.form-hr {
+  border-top: 3px solid white;
+  margin: 0 auto 30px;
+  width: 80%;
+}
+
+/* Envoltorio para centrar el formulario */
+.form-wrapper {
+  max-width: 1200px;  /* Ajusta según tu preferencia */
+  margin: 0 auto;     /* Centra horizontalmente */
+  width: 100%;
+}
+
+/* Filas (dos columnas en desktop, una en móvil) */
+.task-row {
+  justify-content: center;
+  margin-bottom: 20px;
   display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  height: 100%;
+  flex-wrap: wrap; /* Permite que los col-12 salten de línea en móvil */
+  gap: 20px;       /* Espacio entre columnas */
 }
 
-.card-body {
-  overflow-y: auto; /* Asegura que el contenido interno pueda desplazarse */
-  max-height: 100%; /* Limita el contenido al tamaño del cuadrante */
+/* Tarjeta base */
+.task-card {
+  flex: 1 1 0;    /* Para que se adapten al espacio disponible */
+  overflow: visible;
+  border-radius: 8px;
 }
 
-/* Asegura que el cuadrante 4 tenga un scroll interno */
+/* day-image-group: espaciado entre cada día */
+.day-image-group {
+  margin-bottom: 15px;
+}
+
+/* Cuadrante de detectores con scroll si es muy largo */
 .detector-card {
-  height: 100%;
+  max-height: 500px; 
   overflow-y: auto;
 }
 
-button {
-  margin-right: 5px;
+/* Filas de detectores */
+.detector-row {
+  display: flex;
+  align-items: center;
+  margin-bottom: 10px;
+  flex-wrap: wrap; /* Para que los botones no se desborden */
+  gap: 5px;        /* Espacio entre botones */
 }
 
-/* Responsividad para pantallas pequeñas (móviles) */
-@media (max-width: 768px) {
-  .task-container {
-    grid-template-columns: 1fr; /* Una columna en pantallas pequeñas */
-    grid-template-rows: auto;
-    gap: 20px;
-  }
+.detector-label {
+  margin-right: 10px;
+  min-width: 50px;
+}
 
+/* Ajuste responsive adicional:
+   en móvil, cada .task-card ocupa 100% */
+@media (max-width: 767px) {
   .task-card {
-    height: auto; /* Permitir que los cuadrantes sean más flexibles en altura */
-    min-height: 40vh;
-    width: 100%;  /* Que ocupen todo el ancho disponible */
+    flex: 1 1 100%;
   }
 }
-
-
-

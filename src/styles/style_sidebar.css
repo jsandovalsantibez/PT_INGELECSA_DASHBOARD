@@ -1,6 +1,8 @@
+/* SIDEBAR BASE */
 .sidebar-container {
+  position: relative; /* Normal en desktop */
   height: 100vh;
-  width: 180px;
+  width: 240px;
   background: linear-gradient(145deg, #26344f, #192e4c);
   border-right: 1px solid rgba(255, 255, 255, 0.2);
   box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.7);
@@ -9,36 +11,58 @@
   align-items: center;
   padding: 15px 0;
   color: white;
-  transition: width 0.3s ease, background 0.3s ease;
+  transition: width 0.3s ease, background 0.3s ease, transform 0.3s ease;
+  z-index: 999; /* Para superponerse al contenido en móvil */
 }
 
+/* MODO COLAPSADO (DESKTOP) */
 .sidebar-container.collapsed {
   width: 60px;
-  background: linear-gradient(145deg, #26344f, #192e4c); /* Color más oscuro cuando está colapsada */
 }
 
+/* OFF-CANVAS EN MÓVIL */
+@media (max-width: 768px) {
+  .sidebar-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    transform: translateX(-100%);
+    width: 240px;
+  }
+  .sidebar-container.show-mobile {
+    transform: translateX(0);
+  }
+}
+
+/* CONTENIDO DEL SIDEBAR */
 .profile-image-container {
-  padding: 10px;
-  width: 60px;
-  height: 60px;
+  /* Centra la imagen en el contenedor */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 80px;    /* Ajusta a tu gusto */
+  height: 80px;
+  margin: 0 auto;
   overflow: hidden;
 }
 
-img.rounded-circle {
+.profile-image-container img.rounded-circle {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  border-radius: 50%;
   border: 2px solid #fff;
+  border-radius: 50%;
 }
 
+/* LINKS */
 .sidebar-link {
   color: #efefef;
   padding: 15px;
-  font-size: 1em; /* Reducir tamaño del texto */
+  font-size: 1em;
   transition: background-color 0.3s ease, color 0.3s ease;
   width: 100%;
   text-align: center;
+  cursor: pointer;
 }
 
 .sidebar-link:hover {
@@ -48,15 +72,16 @@ img.rounded-circle {
 }
 
 .nav-icons {
-  font-size: 30px; /* Ajuste para que el ícono no sea demasiado grande comparado con el texto */
+  font-size: 30px;
   color: #ffffff;
 }
 
 .nav-text {
-  font-size: 0.8em; /* Reducir el tamaño del texto bajo los iconos */
+  font-size: 0.8em;
   margin-top: 5px;
 }
 
+/* BOTÓN CERRAR SESIÓN */
 .logout-button-container {
   width: 100%;
   text-align: center;
@@ -66,6 +91,25 @@ img.rounded-circle {
   color: #ffffff;
 }
 
-.mt-auto {
-  margin-top: auto;
+/* BOTÓN HAMBURGUESA (MÓVIL) ABAJO CENTRADO */
+.mobile-toggle {
+  display: none;
+  position: fixed;
+  bottom: 20px; /* Ajusta la separación inferior */
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1000;
 }
+
+@media (max-width: 768px) {
+  .mobile-toggle {
+    display: block;
+  }
+}
+
+/* OPCIONAL: Imagen más pequeña si la sidebar está colapsada en desktop */
+.sidebar-container.collapsed .profile-image-container {
+  width: 50px;
+  height: 50px;
+}
+

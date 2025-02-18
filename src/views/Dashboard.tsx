@@ -4,11 +4,14 @@ import { useNavigate } from 'react-router-dom';
 import { auth, db } from '../firebase';
 import { doc, getDoc } from "firebase/firestore";
 import Sidebar from '../components/sideBar';
+
 import TaskCardsList from './HomePage';
 import CreateTaskCard from '../components/CreateTaskCard';
 import HolaMundo from '../components/CreateUser';
 import TaskForm from '../components/TaskForm';
 import TaskAnalytics from './TaskAnalytics';
+
+import '../styles/style_dashboard.css';
 
 const Dashboard: React.FC = () => {
   const [user, setUser] = useState<any>(null);
@@ -66,10 +69,10 @@ const Dashboard: React.FC = () => {
   }
 
   return (
-    <div className="d-flex" style={{ height: '100vh', overflow: 'hidden' }}>
+    <div className="dashboard-container">
       <Sidebar setActiveView={setActiveView} handleLogout={handleLogout} />
-      <div className="flex-grow-1 d-flex flex-column">
-        <div className="flex-grow-1" style={{ overflowY: 'auto' }}>
+      <div className="content-container">
+        <div className="content-body">
           {renderActiveView()}
         </div>
       </div>

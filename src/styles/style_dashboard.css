@@ -1,0 +1,34 @@
+/* Contenedor principal del Dashboard */
+.dashboard-container {
+  display: flex;        /* Sidebar a la izquierda, contenido a la derecha */
+  height: 100vh;        /* Ocupa toda la ventana */
+  overflow: hidden;     /* Evita scroll global; lo haremos en content-container */
+  margin: 0;
+  padding: 0;
+}
+
+/* Sidebar: asume que en sideBar.tsx tienes width: 240px; height: 100vh; etc. */
+
+/* Contenedor del contenido principal */
+.content-container {
+  flex: 1;                  /* Ocupa el espacio restante, a la derecha de la sidebar */
+  height: 100vh;            /* Mismo alto que el contenedor principal */
+  overflow-y: auto;         /* Scroll vertical si el contenido es muy grande */
+  display: flex;            /* Para centrar horizontalmente */
+  justify-content: center;  /* Centrar contenido en X */
+  align-items: flex-start;  /* Arriba en Y */
+}
+
+/* Contenedor interno para el contenido (TaskForm, etc.) */
+.content-body {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* En pantallas pequeñas, la sidebar off-canvas se ocultará,
+   así que el contenedor puede ocupar todo el ancho. */
+@media (max-width: 768px) {
+  .content-container {
+    margin-left: 0;
+  }
+}

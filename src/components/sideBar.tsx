@@ -5,7 +5,16 @@ import { ref, getDownloadURL } from 'firebase/storage';
 import { getFirestore, doc, getDoc } from 'firebase/firestore';
 import { storage } from '../firebase';
 import Profile from '../views/Profile';
-import { FaTasks, FaPlus, FaUserPlus, FaClipboardList, FaBars, FaSignOutAlt } from 'react-icons/fa';
+
+import {
+  FaTasks,
+  FaPlus,
+  FaUserPlus,
+  FaClipboardList,
+  FaBars,
+  FaSignOutAlt,
+} from 'react-icons/fa';
+
 import '../styles/style_sidebar.css';
 
 interface SidebarProps {
@@ -14,7 +23,12 @@ interface SidebarProps {
 }
 
 const Sidebar: React.FC<SidebarProps> = ({ setActiveView, handleLogout }) => {
+  // Para colapso en desktop
   const [collapsed, setCollapsed] = useState(false);
+
+  // Para abrir/cerrar en móvil (off-canvas)
+  const [isMobileOpen, setIsMobileOpen] = useState(false);
+
   const { user } = useAuth();
   const [photoURL, setPhotoURL] = useState<string | null>(null);
   const [showProfileModal, setShowProfileModal] = useState(false);
@@ -32,8 +46,6 @@ const Sidebar: React.FC<SidebarProps> = ({ setActiveView, handleLogout }) => {
         }
       };
 
-      fetchProfileImage();
-
       const fetchUserRole = async () => {
         try {
           const db = getFirestore();
@@ -50,107 +62,135 @@ const Sidebar: React.FC<SidebarProps> = ({ setActiveView, handleLogout }) => {
         }
       };
 
+      fetchProfileImage();
       fetchUserRole();
     }
   }, [user]);
-
 
   const handleCloseProfileModal = () => {
     setShowProfileModal(false);
   };
 
+  // Alterna la visibilidad en modo móvil
+  const toggleMobileSidebar = () => {
+    setIsMobileOpen(!isMobileOpen);
+  };
+
+  // Cierra la sidebar móvil al hacer clic en una opción
+  const handleNavClick = (view: string) => {
+    setActiveView(view);
+    if (isMobileOpen) {
+      setIsMobileOpen(false);
+    }
+  };
+
   return (
-    <div className={`sidebar-container ${collapsed ? 'collapsed' : ''}`}>
+    <>
+      {/* SIDEBAR */}
       <div
-        className="d-flex flex-column text-white"
-        style={{ width: collapsed ? '60px' : '240px', transition: 'width 0.3s', alignItems: 'center' }}
+        className={`sidebar-container
+          ${collapsed ? 'collapsed' : ''}
+          ${isMobileOpen ? 'show-mobile' : ''}
+        `}
       >
-        {/* Imagen de perfil */}
-        <div className="profile-image-container text-center mb-4">
-          <img
-            src={photoURL || 'https://via.placeholder.com/60'}
-            alt="Imagen de perfil"
-            className="rounded-circle"
-          />
-        </div>
+        <div className="d-flex flex-column text-white h-100 w-100">
+          {/* Imagen de perfil */}
+          <div className="profile-image-container text-center mb-4">
+            <img
+              src={photoURL || 'https://via.placeholder.com/60'}
+              alt="Imagen de perfil"
+              className="rounded-circle"
+            />
+          </div>
 
-        {/* Grupo de navegación centrado verticalmente */}
-        <div className="flex-grow-1 d-flex flex-column justify-content-start">
-          <Nav className="flex-column align-items-center w-100">
-            <Nav.Link
-              className="sidebar-link d-flex flex-column align-items-center mb-5"
-              onClick={() => setActiveView('taskcardlist')}
-            >
-              <FaTasks className="nav-icons" />
-              {!collapsed && <span className="nav-text text-white">Tareas</span>}
-            </Nav.Link>
-            <Nav.Link
-              className="sidebar-link d-flex flex-column align-items-center mb-5"
-              onClick={() => setActiveView('taskanalytics')}
-            >
-              <FaClipboardList className="nav-icons" />
-              {!collapsed && <span className="nav-text text-white">Análisis</span>}
-            </Nav.Link>
-            <Nav.Link
-              className="sidebar-link d-flex flex-column align-items-center mb-5"
-              onClick={() => setActiveView('taskform')}
-            >
-              <FaClipboardList className="nav-icons" />
-              {!collapsed && <span className="nav-text text-white">Formulario</span>}
-            </Nav.Link>
-          </Nav>
-        </div>
-
-        {/* Separación y segundo grupo de navegación */}
-        {userRole === 'gerente_operaciones' && (
-          <div className="mt-5">
-            <hr className="text-white" />
+          {/* Menú principal */}
+          <div className="flex-grow-1 d-flex flex-column justify-content-start">
             <Nav className="flex-column align-items-center w-100">
               <Nav.Link
                 className="sidebar-link d-flex flex-column align-items-center mb-5"
-                onClick={() => setActiveView('createtask')}
+                onClick={() => handleNavClick('taskcardlist')}
               >
-                <FaPlus className="nav-icons" />
-                {!collapsed && <span className="nav-text text-white">Crear Tarea</span>}
+                <FaTasks className="nav-icons" />
+                {!collapsed && <span className="nav-text text-white">Tareas</span>}
               </Nav.Link>
+
               <Nav.Link
                 className="sidebar-link d-flex flex-column align-items-center mb-5"
-                onClick={() => setActiveView('createuser')}
+                onClick={() => handleNavClick('taskanalytics')}
               >
-                <FaUserPlus className="nav-icons" />
-                {!collapsed && <span className="nav-text text-white">Gestor de Usuarios</span>}
+                <FaClipboardList className="nav-icons" />
+                {!collapsed && <span className="nav-text text-white">Análisis</span>}
+              </Nav.Link>
+
+              <Nav.Link
+                className="sidebar-link d-flex flex-column align-items-center mb-5"
+                onClick={() => handleNavClick('taskform')}
+              >
+                <FaClipboardList className="nav-icons" />
+                {!collapsed && <span className="nav-text text-white">Formulario</span>}
               </Nav.Link>
             </Nav>
           </div>
-        )}
+
+          {/* Opciones extra para el rol 'gerente_operaciones' */}
+          {userRole === 'gerente_operaciones' && (
+            <div className="mt-3 w-100">
+              <hr className="text-white" />
+              <Nav className="flex-column align-items-center w-100">
+                <Nav.Link
+                  className="sidebar-link d-flex flex-column align-items-center mb-5"
+                  onClick={() => handleNavClick('createtask')}
+                >
+                  <FaPlus className="nav-icons" />
+                  {!collapsed && <span className="nav-text text-white">Crear Tarea</span>}
+                </Nav.Link>
+
+                <Nav.Link
+                  className="sidebar-link d-flex flex-column align-items-center mb-5"
+                  onClick={() => handleNavClick('createuser')}
+                >
+                  <FaUserPlus className="nav-icons" />
+                  {!collapsed && <span className="nav-text text-white">Gestor de Usuarios</span>}
+                </Nav.Link>
+              </Nav>
+            </div>
+          )}
+
+          {/* Botón de Cerrar Sesión */}
+          <div className="logout-button-container text-center my-3 w-100">
+            <Nav.Link
+              className="sidebar-link d-flex flex-column align-items-center"
+              onClick={handleLogout}
+            >
+              <FaSignOutAlt className="nav-icons" />
+              {!collapsed && <span className="nav-text text-white">Cerrar Sesión</span>}
+            </Nav.Link>
+          </div>
+
+          {/* Botón de colapso para desktop (oculto en móvil) */}
+          <div className="mt-auto text-center d-none d-md-flex justify-content-center align-items-center">
+            <Button variant="link" className="text-white" onClick={() => setCollapsed(!collapsed)}>
+              <FaBars size={30} />
+            </Button>
+          </div>
+        </div>
       </div>
 
-      {/* Botón de cerrar sesión */}
-      <div className="logout-button-container text-center mb-5">
-        <Nav.Link
-          className="sidebar-link d-flex flex-column align-items-center"
-          onClick={handleLogout}
-        >
-          <FaSignOutAlt className="nav-icons" />
-          {!collapsed && <span className="nav-text text-white">Cerrar Sesión</span>}
-        </Nav.Link>
-      </div>
-
-      {/* Botón de colapso siempre presente */}
-      <div className="mt-auto text-center d-flex justify-content-center align-items-center" style={{ height: '50px' }}>
-        <Button variant="link" className="text-white" onClick={() => setCollapsed(!collapsed)}>
-          <FaBars size={30} />
+      {/* BOTÓN HAMBURGUESA (MÓVIL) ABAJO CENTRADO */}
+      <div className="mobile-toggle d-md-none">
+        <Button variant="primary" onClick={toggleMobileSidebar}>
+          <FaBars />
         </Button>
       </div>
 
-      {/* Modal del perfil */}
+      {/* Modal del perfil (si lo necesitas) */}
       <Modal show={showProfileModal} onHide={handleCloseProfileModal} size="lg">
-        <Modal.Header closeButton></Modal.Header>
+        <Modal.Header closeButton />
         <Modal.Body>
           <Profile handleLogout={handleLogout} />
         </Modal.Body>
       </Modal>
-    </div>
+    </>
   );
 };
 
