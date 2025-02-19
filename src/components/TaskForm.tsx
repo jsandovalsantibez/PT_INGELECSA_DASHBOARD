@@ -108,7 +108,7 @@ const TaskForm: React.FC = () => {
     const updatedDetectorsByLazo: { [key: string]: string[] } = {};
     for (let i = 1; i <= lazos; i++) {
       const lazoKey = `L${i}`;
-      updatedDetectorsByLazo[lazoKey] = detectorsByLazo[lazoKey] || Array(159).fill('no_hecho');
+      updatedDetectorsByLazo[lazoKey] = detectorsByLazo[lazoKey] || Array(50).fill('no_hecho');
     }
     setDetectorsByLazo(updatedDetectorsByLazo);
   }, [lazos]);
@@ -123,19 +123,11 @@ const TaskForm: React.FC = () => {
           <Card.Title>Dispositivos del Lazo {currentLazo}</Card.Title>
           <Row>
             {/* Primera columna de detectores (1-25) */}
-<<<<<<< HEAD
-            <Col xs={6}>
-              {detectors.slice(0, 79).map((state, index) => (
-                <div key={`${lazoKey}D${index + 1}`} style={{ display: 'flex', alignItems: 'center', marginBottom: '10px' }}>
-                <Form.Label style={{ marginRight: '10px' }}>{`L${currentLazo}D${index + 1}`}</Form.Label>
-                <Button
-=======
             <Col xs={12} md={6}>
               {detectors.slice(0, 25).map((state, index) => (
                 <div key={`${lazoKey}D${index + 1}`} className="detector-row">
                   <Form.Label className="detector-label">{`L${currentLazo}D${index + 1}`}</Form.Label>
                   <Button
->>>>>>> bfb428e (Mejoras en la responsividad y centrado del formulario)
                     variant={state === 'hecho' ? 'success' : 'outline-success'}
                     onClick={() => handleStateChange(lazoKey, index, 'hecho')}
                     size="sm"
@@ -160,17 +152,10 @@ const TaskForm: React.FC = () => {
               ))}
             </Col>
             {/* Segunda columna de detectores (26-50) */}
-<<<<<<< HEAD
-            <Col xs={6}>
-              {detectors.slice(79, 159).map((state, index) => (
-                <div key={`${lazoKey}D${index + 26}`} style={{ display: 'flex', alignItems: 'center', marginBottom: '10px' }}>
-                <Form.Label style={{ marginRight: '10px' }}>{`L${currentLazo}D${index + 80}`}</Form.Label>
-=======
             <Col xs={12} md={6}>
               {detectors.slice(25, 50).map((state, index) => (
                 <div key={`${lazoKey}D${index + 26}`} className="detector-row">
                   <Form.Label className="detector-label">{`L${currentLazo}D${index + 26}`}</Form.Label>
->>>>>>> bfb428e (Mejoras en la responsividad y centrado del formulario)
                   <Button
                     variant={state === 'hecho' ? 'success' : 'outline-success'}
                     onClick={() => handleStateChange(lazoKey, index + 25, 'hecho')}

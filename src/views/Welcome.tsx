@@ -22,7 +22,7 @@ const Welcome: React.FC = () => {
             <Carousel.Item>
               <img className="d-block w-100" src={bienvenida_2} alt="First slide" />
               <Carousel.Caption>
-                <h3>Bienvenido a INGELECSA LTDA</h3>
+                <h3>Bienvenido a INGELECSA APP</h3>
                 <p>Soluciones para sistemas de protección contra incendios.</p>
               </Carousel.Caption>
             </Carousel.Item>
