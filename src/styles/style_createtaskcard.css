@@ -1,0 +1,80 @@
+.create-task-container {
+    background-color: #1a2b4c;
+    min-height: 100vh;
+    padding: 20px;
+    overflow-x: hidden;
+  }
+  
+  /* Título y hr */
+  .create-task-title {
+    color: white;
+    text-align: center;
+    margin-bottom: 10px;
+  }
+  
+  .create-task-hr {
+    border-top: 3px solid white;
+    margin-bottom: 30px;
+  }
+  
+  /* Tarjetas */
+  .task-form-card,
+  .task-list-card {
+    background-color: #fff;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  }
+  
+  /* Sección de títulos internos */
+  .section-title {
+    margin-top: 10px;
+    margin-bottom: 8px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    border-bottom: 1px solid #ddd;
+    padding-bottom: 5px;
+  }
+  
+  /* Columnas */
+  .left-column {
+    padding-right: 10px;
+    margin-bottom: 20px;
+  }
+  
+  .right-column {
+    padding-left: 10px;
+    margin-bottom: 20px;
+  }
+  
+  /* Lista de tareas */
+  .my-list-item {
+    margin-bottom: 5px;
+  }
+  
+  .task-code {
+    max-width: 180px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-weight: 500;
+  }
+  
+  /* Botón de tres puntos */
+  .three-dots-btn {
+    margin: 0 !important;
+    padding: 0 !important;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  /* Responsividad */
+  @media (max-width: 768px) {
+    .left-column {
+      padding-right: 0 !important;
+    }
+    .right-column {
+      padding-left: 0 !important;
+    }
+  }

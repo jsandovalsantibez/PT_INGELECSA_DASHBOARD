@@ -1,30 +1,101 @@
 import React, { useState, useEffect } from 'react';
-import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, updateDoc } from "firebase/firestore";
-import { Form, Button, Col, Row, ListGroup, Dropdown, Container, ButtonGroup, Modal } from 'react-bootstrap';
-import { BsThreeDotsVertical } from 'react-icons/bs';
+import {
+  Container, Row, Col, Form, Button, ListGroup, Dropdown, Modal
+} from 'react-bootstrap';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
+import { 
+  getFirestore, collection, getDocs, addDoc, doc, updateDoc, deleteDoc, getDoc
+} from 'firebase/firestore';
+import { BsThreeDotsVertical } from 'react-icons/bs';
+import '../styles/style_createtaskcard.css';
 
-const CreateTaskCard: React.FC = () => {
-  const [placeCategory, setPlaceCategory] = useState('');
-  const [place, setPlace] = useState('');
+interface Task {
+  id: string;
+  // Campos originales
+  assignedPersonnel?: string[];
+  tools?: string[];
+  maintenanceType?: string;
+  taskPeriod?: [Date | null, Date | null];
+  taskCode?: string;
+  panelMarca?: string;
+  lazos?: number;
+  description?: string;
+  active?: boolean;
+  coordinates?: { lat: number; lng: number };
+
+  // NUEVOS CAMPOS de mantención
+  negocio?: string;
+  centroCosto?: string;
+  storeName?: string;
+  ot?: string;
+  maintenanceDate?: Date | null;
+  reportCreatedBy?: string;
+  reportDate?: Date | null;
+
+  // Campos de la "Información de Contacto" (si los usabas)
+  contactPerson?: string[];
+  contactNumber?: string;
+
+  // (Otros campos que pudieran existir)
+  placeCategory?: string; // Si aún se usan en la lista, etc.
+  place?: string;
+  checkInTime?: string;
+  checkOutTime?: string;
+}
+
+const CreateTaskForm: React.FC = () => {
+  // --- NUEVOS CAMPOS: Información de mantención ---
+  const [negocio, setNegocio] = useState('');
+  const [centroCosto, setCentroCosto] = useState('');
+  const [lugar, setLugar] = useState('');
+  const [storeName, setStoreName] = useState('');
+  const [ot, setOt] = useState('');
+  const [maintenanceDate, setMaintenanceDate] = useState<Date | null>(null);
+  const [reportCreatedBy, setReportCreatedBy] = useState('');
+  const [reportDate, setReportDate] = useState<Date | null>(null);
+  // Se mantienen Hora de Ingreso y Salida
   const [checkInTime, setCheckInTime] = useState('');
   const [checkOutTime, setCheckOutTime] = useState('');
-  const [contactPerson, setContactPerson] = useState(['']);
-  const [contactNumber, setContactNumber] = useState('');
-  const [assignedPersonnel, setAssignedPersonnel] = useState<string[]>([]);
-  const [tools, setTools] = useState(['']);
-  const [maintenanceType, setMaintenanceType] = useState('');
-  const [tasks, setTasks] = useState<any[]>([]);
-  const [taskCode, setTaskCode] = useState(''); 
-  const [taskPeriod, setTaskPeriod] = useState<[Date | null, Date | null]>([null, null]); 
-  const [personnelList, setPersonnelList] = useState<any[]>([]); 
-  const [showModal, setShowModal] = useState(false);
-  const [selectedTask, setSelectedTask] = useState<any>(null);
-  const [isEditing, setIsEditing] = useState(false); 
-  const [editedTask, setEditedTask] = useState<any>(null); 
 
-  const placesByCategory: { [key: string]: string[] } = {
+  // --- CAMPOS DE INFORMACIÓN DE CONTACTO ---
+  const [contactPerson, setContactPerson] = useState<string[]>(['']);
+  const [contactNumber, setContactNumber] = useState('');
+
+  // --- INFORMACIÓN DEL PERSONAL ---
+  const [assignedPersonnel, setAssignedPersonnel] = useState<string[]>([]);
+  const [personnelList, setPersonnelList] = useState<any[]>([]);
+
+  // --- OTROS CAMPOS ---
+  const [tools, setTools] = useState<string[]>(['']);
+  const [maintenanceType, setMaintenanceType] = useState('');
+  const [taskPeriod, setTaskPeriod] = useState<[Date | null, Date | null]>([null, null]);
+  const [taskCode, setTaskCode] = useState('');
+
+  // --- INFORMACIÓN DEL PANEL ---
+  const [panelMarca, setPanelMarca] = useState('');
+  const [lazos, setLazos] = useState<number>(0);
+  const [description, setDescription] = useState('');
+
+  // --- LISTADO DE TAREAS Y MODAL ---
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [showModal, setShowModal] = useState(false);
+  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedTask, setEditedTask] = useState<Task | null>(null);
+
+  // --- ESTADOS PARA DETECTORES (si se usan en el formulario) ---
+  const [detectorsByLazo, setDetectorsByLazo] = useState<{ [key: string]: string[] }>({});
+  const [imagesInicio, setImagesInicio] = useState<(File | null)[]>([]);
+  const [imagesTermino, setImagesTermino] = useState<(File | null)[]>([]);
+  const [workDays, setWorkDays] = useState<Date[]>([]);
+  const [uploadedDays, setUploadedDays] = useState<number>(0);
+
+  // --- ESTADOS PARA MODAL DE VISTA PREVIA ---
+  const [showPreview, setShowPreview] = useState(false);
+
+  // Opciones de select para Negocio (antes: placeCategory)
+  const negociosOptions: { [key: string]: string[] } = {
     homecenter: ["Estación Central", "Independencia", "El Bosque"],
     falabella: ["Costanera", "Parque Arauco", "Independencia"],
     tottus: ["El Bosque", "Estación Central", "Buin"],
@@ -32,10 +103,10 @@ const CreateTaskCard: React.FC = () => {
   };
 
   const maintenanceTypes = [
-    { value: 'mantencion_preventiva', label: 'Mantención Preventiva', code: 'MP', color: 'green' },
-    { value: 'mantencion_correctiva', label: 'Mantención Correctiva', code: 'MC', color: 'orange' },
-    { value: 'inspeccion', label: 'Inspección', code: 'INS', color: 'blue' },
-    { value: 'emergencia', label: 'Emergencia', code: 'EMR', color: 'red' },
+    { value: 'mantencion_preventiva', label: 'Mantención Preventiva', code: 'MP' },
+    { value: 'mantencion_correctiva', label: 'Mantención Correctiva', code: 'MC' },
+    { value: 'inspeccion', label: 'Inspección', code: 'INS' },
+    { value: 'emergencia', label: 'Emergencia', code: 'EMR' },
   ];
 
   const categoryCodeMap: { [key: string]: string } = {
@@ -45,43 +116,80 @@ const CreateTaskCard: React.FC = () => {
     ikea: 'IKEA'
   };
 
+  // Mapa de coordenadas
+  const coordinatesMap: { [key: string]: { [key: string]: { lat: number; lng: number } } } = {
+    homecenter: {
+      "Estación Central": { lat: -33.454371, lng: -70.680380 },
+      "Independencia": { lat: -33.424107, lng: -70.654372 },
+      "El Bosque": { lat: -33.553972, lng: -70.675679 },
+    },
+    falabella: {
+      "Costanera": { lat: -33.417795, lng: -70.606300 },
+      "Parque Arauco": { lat: -33.400925, lng: -70.576960 },
+      "Independencia": { lat: -33.424524, lng: -70.654489 },
+    },
+    tottus: {
+      "El Bosque": { lat: -33.553663, lng: -70.675051 },
+      "Estación Central": { lat: -33.452455, lng: -70.682363 },
+      "Buin": { lat: -33.731844, lng: -70.734692 },
+    },
+    ikea: {
+      "Parque Arauco": { lat: -33.401161, lng: -70.575539 },
+    },
+  };
+
+  // --- Generar "Nombre de Tienda" (Negocio + Lugar) ---
+  useEffect(() => {
+    if (negocio && lugar) {
+      setStoreName(`${negocio} ${lugar}`);
+    } else {
+      setStoreName('');
+    }
+  }, [negocio, lugar]);
+
+  // --- Generar taskCode (usando Negocio, Lugar y Tipo de Mantenimiento) ---
   const generateTaskCode = () => {
-    if (!placeCategory || !place || !maintenanceType) return;
-    const categoryCode = categoryCodeMap[placeCategory];
-    const maintenanceCode = maintenanceTypes.find(type => type.value === maintenanceType)?.code;
-    const newTaskCode = `${categoryCode}_${place.toUpperCase()}_PCII_INGELECSA_${maintenanceCode}`;
-    setTaskCode(newTaskCode); 
+    if (!negocio || !lugar || !maintenanceType) return;
+    const categoryCode = categoryCodeMap[negocio];
+    const maintenanceObj = maintenanceTypes.find(type => type.value === maintenanceType);
+    const maintenanceCode = maintenanceObj?.code || 'XX';
+    const newTaskCode = `${categoryCode}_${lugar.toUpperCase()}_PCII_INGELECSA_${maintenanceCode}`;
+    setTaskCode(newTaskCode);
   };
 
   useEffect(() => {
-    generateTaskCode(); 
-  }, [placeCategory, place, maintenanceType]);
+    generateTaskCode();
+  }, [negocio, lugar, maintenanceType]);
 
+  // --- Cargar Tareas ---
   const fetchTasks = async () => {
     const db = getFirestore();
     const querySnapshot = await getDocs(collection(db, "taskCards"));
-    const tasksList = querySnapshot.docs.map(doc => ({
-      id: doc.id,
-      ...(doc.data() as any),
+    const tasksList = querySnapshot.docs.map(docSnapshot => ({
+      id: docSnapshot.id,
+      ...(docSnapshot.data() as Omit<Task, 'id'>),
     }));
     setTasks(tasksList);
   };
 
+  // --- Cargar Personal ---
+  const fetchPersonnel = async () => {
+    const db = getFirestore();
+    const q = collection(db, 'users');
+    const personnelDocs = await getDocs(q);
+    const personnelArray = personnelDocs.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    }));
+    setPersonnelList(personnelArray);
+  };
+
   useEffect(() => {
     fetchTasks();
-    const fetchPersonnel = async () => {
-      const db = getFirestore();
-      const q = collection(db, 'users');
-      const personnelDocs = await getDocs(q);
-      const personnelList = personnelDocs.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      }));
-      setPersonnelList(personnelList);
-    };
     fetchPersonnel();
   }, []);
 
+  // --- Manejo de checkboxes para técnicos ---
   const handlePersonnelChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { value, checked } = e.target;
     setAssignedPersonnel(prev =>
@@ -89,67 +197,61 @@ const CreateTaskCard: React.FC = () => {
     );
   };
 
-  const coordinatesMap: { [key: string]: { [key: string]: { lat: number; lng: number } } } = {
-    homecenter: {
-      "Estación Central": { lat: -33.454371487250405, lng: -70.68038025126974 },
-      "Independencia": { lat: -33.42410776719904, lng: -70.65437272933464 },
-      "El Bosque": { lat: -33.55397243135922, lng: -70.67567938425546 },
-    },
-    falabella: {
-      "Costanera": { lat: -33.41779539847876, lng: -70.6063008072978 },
-      "Parque Arauco": { lat: -33.40092528854494, lng: -70.57696037900823 },
-      "Independencia": { lat: -33.42452448110847, lng: -70.65448901351925 },
-    },
-    tottus: {
-      "El Bosque": { lat: -33.553663532393486, lng: -70.67505127947594 },
-      "Estación Central": { lat: -33.4524555995196, lng: -70.68236381684659 },
-      "Buin": { lat: -33.73184491529447, lng: -70.73469287730991 },
-    },
-    ikea: {
-      "Parque Arauco": { lat: -33.40116170486019, lng: -70.57553957108563 },
-    },
-  };
-  
-  const handleAddContactPerson = () => {
-    setContactPerson([...contactPerson, '']);
-  };
-
-  const handleContactPersonChange = (index: number, value: string) => {
-    const updatedPersons = [...contactPerson];
-    updatedPersons[index] = value;
-    setContactPerson(updatedPersons);
-  };
-
+  // --- CREAR TAREA ---
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const db = getFirestore();
+    generateTaskCode();
+    if (!taskCode) {
+      alert("No se pudo generar el código de la tarea. Revisa Negocio, Lugar y Tipo de Mantenimiento.");
+      return;
+    }
     try {
-      const coordinates = coordinatesMap[placeCategory]?.[place];
-
-      if (!coordinates) {
+      const db = getFirestore();
+      const coords = coordinatesMap[negocio]?.[lugar];
+      if (!coords) {
         alert("Coordenadas no encontradas para el lugar seleccionado.");
         return;
       }
-
       await addDoc(collection(db, "taskCards"), {
-        placeCategory,
-        place,
+        // Información de la Mantención
+        negocio,
+        centroCosto,
+        storeName,
+        ot,
+        maintenanceDate,
+        reportCreatedBy,
+        reportDate,
         checkInTime,
         checkOutTime,
+        // Información de Contacto
         contactPerson,
         contactNumber,
+        // Información del Personal
         assignedPersonnel,
+        // Periodo de la Tarea
+        taskPeriod,
+        // Herramientas y Tipo de Mantenimiento
         tools,
         maintenanceType,
+        // Información del Panel
+        panelMarca,
+        lazos,
+        description,
+        // Generado
         taskCode,
-        taskPeriod,
         active: false,
-        coordinates, 
+        coordinates: coords
       });
-
-      alert("Card creada con éxito!");
-      setPlaceCategory('');
-      setPlace('');
+      alert("Tarea creada con éxito!");
+      // Resetear formulario
+      setNegocio('');
+      setCentroCosto('');
+      setLugar('');
+      setStoreName('');
+      setOt('');
+      setMaintenanceDate(null);
+      setReportCreatedBy('');
+      setReportDate(null);
       setCheckInTime('');
       setCheckOutTime('');
       setContactPerson(['']);
@@ -159,33 +261,38 @@ const CreateTaskCard: React.FC = () => {
       setMaintenanceType('');
       setTaskPeriod([null, null]);
       setTaskCode('');
+      setPanelMarca('');
+      setLazos(0);
+      setDescription('');
       fetchTasks();
     } catch (error) {
-      console.error("Error al crear la card: ", error);
+      console.error("Error al crear la tarea: ", error);
     }
   };
 
+  // --- BORRAR TAREA ---
   const handleDeleteTask = async (taskId: string) => {
     if (window.confirm("¿Está seguro que desea borrar esta tarea?")) {
       try {
         const db = getFirestore();
         await deleteDoc(doc(db, "taskCards", taskId));
-        fetchTasks(); 
+        fetchTasks();
         alert("Tarea borrada con éxito.");
       } catch (error) {
-        console.error("Error al borrar la tarea: ", error);
+        console.error("Error al borrar la tarea:", error);
       }
     }
   };
 
-  const handleShowDetails = (task: any) => {
+  // --- MODAL: DETALLES / EDICIÓN ---
+  const handleShowDetails = (task: Task) => {
     setSelectedTask(task);
     setEditedTask(task);
     setShowModal(true);
-    setIsEditing(false); 
+    setIsEditing(false);
   };
 
-  const handleEditTask = (task: any) => {
+  const handleEditTask = (task: Task) => {
     setIsEditing(true);
     setEditedTask({ ...task });
     setShowModal(true);
@@ -196,7 +303,10 @@ const CreateTaskCard: React.FC = () => {
     try {
       const db = getFirestore();
       const taskRef = doc(db, 'taskCards', editedTask.id);
-      await updateDoc(taskRef, editedTask);
+      const filteredEditedTask = Object.fromEntries(
+        Object.entries(editedTask).filter(([_, v]) => v !== undefined)
+      );
+      await updateDoc(taskRef, filteredEditedTask);
       alert('Tarea actualizada con éxito!');
       setShowModal(false);
       setIsEditing(false);
@@ -206,87 +316,161 @@ const CreateTaskCard: React.FC = () => {
     }
   };
 
-
   const handleCloseModal = () => {
     setShowModal(false);
-    setIsEditing(false); 
+    setIsEditing(false);
   };
 
   return (
-    <Container fluid style={{ padding: '0' }}>
-      <Row style={{ backgroundColor: '#1a2b4c', minHeight: '100vh', padding: '20px', margin: '0' }}>
-        <Col md={12}>
-          <h2 style={{ color: 'white', marginBottom: '10px' }}>Creación y Edición de Tareas</h2>
-          <hr style={{ borderTop: '3px solid white', marginBottom: '30px' }} />
+    <Container fluid className="create-task-container">
+      <Row>
+        <Col xs={12}>
+          <h2 className="create-task-title">Creación y Edición de Tareas</h2>
+          <hr className="create-task-hr" />
         </Col>
-        <Col md={5} style={{ paddingBottom: '20px', paddingRight: '10px' }}>
-          <div style={{ backgroundColor: 'white', padding: '20px', borderRadius: '8px', boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.1)' }}>
-            <Form onSubmit={handleSubmit}>
-              <Row className="mb-2">
-                <Form.Group as={Col} md="12">
-                  <Form.Label>Categoría del Lugar</Form.Label>
+      </Row>
+
+      {/* Nuevo apartado: Información de la Mantención */}
+      <Row className="g-3">
+        <Col xs={12} className="mb-3">
+          <div className="task-form-card">
+            <div className="form-wrapper">
+              <h4 className="section-title">Información de la Mantención</h4>
+              <Row className="mb-3">
+                <Form.Group as={Col} xs={12} md={6} controlId="negocio">
+                  <Form.Label>Negocio</Form.Label>
                   <Form.Control
                     as="select"
-                    value={placeCategory}
-                    onChange={e => {
-                      setPlaceCategory(e.target.value);
-                      setPlace(''); 
+                    value={negocio}
+                    onChange={(e) => {
+                      setNegocio(e.target.value);
+                      setLugar('');
                     }}
                     required
                   >
-                    <option value="" disabled>Seleccione una categoría</option>
+                    <option value="" disabled>Seleccione un negocio</option>
                     <option value="homecenter">Homecenter</option>
                     <option value="falabella">Falabella</option>
                     <option value="tottus">Tottus</option>
                     <option value="ikea">Ikea</option>
                   </Form.Control>
                 </Form.Group>
+                <Form.Group as={Col} xs={12} md={6} controlId="centroCosto">
+                  <Form.Label>Centro de Costo</Form.Label>
+                  <Form.Control
+                    type="text"
+                    placeholder="Ingrese el centro de costo"
+                    value={centroCosto}
+                    onChange={(e) => setCentroCosto(e.target.value)}
+                    required
+                  />
+                </Form.Group>
               </Row>
-
-              <Row className="mb-2">
-                <Form.Group as={Col} md="12">
+              <Row className="mb-3">
+                <Form.Group as={Col} xs={12} md={6} controlId="lugar">
                   <Form.Label>Lugar</Form.Label>
                   <Form.Control
                     as="select"
-                    value={place}
-                    onChange={e => setPlace(e.target.value)}
+                    value={lugar}
+                    onChange={(e) => setLugar(e.target.value)}
                     required
-                    disabled={!placeCategory}
+                    disabled={!negocio}
                   >
-                    <option value="" disabled>Seleccione un lugar</option>
-                    {placeCategory && placesByCategory[placeCategory]?.map((placeOption) => (
-                      <option key={placeOption} value={placeOption}>{placeOption}</option>
+                    <option value="" disabled>Seleccione el Lugar</option>
+                    {negocio && negociosOptions[negocio]?.map((loc) => (
+                      <option key={loc} value={loc}>
+                        {loc}
+                      </option>
                     ))}
                   </Form.Control>
                 </Form.Group>
+                <Form.Group as={Col} xs={12} md={6} controlId="storeName">
+                  <Form.Label>Nombre de Tienda</Form.Label>
+                  <Form.Control
+                    type="text"
+                    value={storeName}
+                    readOnly
+                  />
+                </Form.Group>
               </Row>
-
-              <Row className="mb-2">
-                <Form.Group as={Col} md="6">
+              <Row className="mb-3">
+                <Form.Group as={Col} xs={12} md={6} controlId="ot">
+                  <Form.Label>Orden de Trabajo (OT)</Form.Label>
+                  <Form.Control
+                    type="text"
+                    placeholder="Ingrese la OT"
+                    value={ot}
+                    onChange={(e) => setOt(e.target.value)}
+                    required
+                  />
+                </Form.Group>
+                <Form.Group as={Col} xs={12} md={6} controlId="maintenanceDate">
+                  <Form.Label>Fecha de Mantenimiento</Form.Label>
+                  <DatePicker
+                    selected={maintenanceDate}
+                    onChange={(date: Date | null) => setMaintenanceDate(date)}
+                    dateFormat="dd/MM/yyyy"
+                    className="form-control"
+                    required
+                  />
+                </Form.Group>
+              </Row>
+              <Row className="mb-3">
+                <Form.Group as={Col} xs={12} md={6} controlId="reportCreatedBy">
+                  <Form.Label>Informe creado por</Form.Label>
+                  <Form.Control
+                    type="text"
+                    placeholder="(Standby)"
+                    value={reportCreatedBy}
+                    onChange={(e) => setReportCreatedBy(e.target.value)}
+                    disabled
+                  />
+                </Form.Group>
+                <Form.Group as={Col} xs={12} md={6} controlId="reportDate">
+                  <Form.Label>Fecha Informe</Form.Label>
+                  <DatePicker
+                    selected={reportDate}
+                    onChange={(date: Date | null) => setReportDate(date)}
+                    dateFormat="dd/MM/yyyy"
+                    className="form-control"
+                    disabled
+                  />
+                </Form.Group>
+              </Row>
+              <Row className="mb-3">
+                <Form.Group as={Col} xs={6} controlId="checkInTime">
                   <Form.Label>Hora de Ingreso</Form.Label>
                   <Form.Control
                     type="time"
                     value={checkInTime}
-                    onChange={e => setCheckInTime(e.target.value)}
+                    onChange={(e) => setCheckInTime(e.target.value)}
                     required
-                    name="checkInTime"
                   />
                 </Form.Group>
-
-                <Form.Group as={Col} md="6">
+                <Form.Group as={Col} xs={6} controlId="checkOutTime">
                   <Form.Label>Hora de Salida</Form.Label>
                   <Form.Control
                     type="time"
                     value={checkOutTime}
-                    onChange={e => setCheckOutTime(e.target.value)}
+                    onChange={(e) => setCheckOutTime(e.target.value)}
                     required
-                    name="checkOutTime"
                   />
                 </Form.Group>
               </Row>
+            </div>
+          </div>
+        </Col>
+      </Row>
 
-              <Row className="mb-2">
-                <Form.Group as={Col} md="6">
+      {/* --- Resto del formulario (Información de Contacto, Personal, Periodo, Herramientas, Información del Panel) --- */}
+      <Row className="g-3">
+        {/* Columna izquierda: Información de Contacto */}
+        <Col xs={12} md={5} className="left-column">
+          <div className="task-form-card">
+            <div className="form-wrapper">
+              <h4 className="section-title">Información de Contacto</h4>
+              <Row className="mb-3">
+                <Form.Group as={Col} xs={12}>
                   <Form.Label>Personal de Contacto</Form.Label>
                   {contactPerson.map((person, index) => (
                     <Form.Control
@@ -294,31 +478,43 @@ const CreateTaskCard: React.FC = () => {
                       type="text"
                       placeholder="Nombre y Apellido"
                       value={person}
-                      onChange={e => handleContactPersonChange(index, e.target.value)}
+                      onChange={(e) => {
+                        const updated = [...contactPerson];
+                        updated[index] = e.target.value;
+                        setContactPerson(updated);
+                      }}
                       required
+                      className="mb-2"
                     />
                   ))}
-                  <Button variant="outline-primary" onClick={handleAddContactPerson} className="mt-2">
+                  <Button variant="outline-primary" onClick={() => setContactPerson([...contactPerson, ''])} className="w-100">
                     Agregar otra persona
                   </Button>
                 </Form.Group>
-
-                <Form.Group as={Col} md="6">
+                <Form.Group as={Col} xs={12} className="mt-3">
                   <Form.Label>Número de Contacto</Form.Label>
                   <Form.Control
                     type="text"
                     placeholder="+569xxxxxxxx"
                     value={contactNumber}
-                    onChange={e => setContactNumber(e.target.value)}
+                    onChange={(e) => setContactNumber(e.target.value)}
                     required
-                    pattern="\+569[0-9]{8}"
                   />
                 </Form.Group>
               </Row>
+            </div>
+          </div>
+        </Col>
 
-              <Form.Group as={Col} md="12">
+        {/* Columna derecha: Información del Personal, Periodo, Herramientas y Panel */}
+        <Col xs={12} md={7} className="right-column">
+          <div className="task-form-card">
+            <div className="form-wrapper">
+              {/* Información del Personal */}
+              <h4 className="section-title">Información del Personal</h4>
+              <Form.Group className="mb-3">
                 <Form.Label>Seleccionar Técnicos de Soporte</Form.Label>
-                {personnelList.map(person => (
+                {personnelList.map((person) => (
                   <Form.Check
                     key={person.id}
                     type="checkbox"
@@ -329,7 +525,8 @@ const CreateTaskCard: React.FC = () => {
                 ))}
               </Form.Group>
 
-              <Form.Group as={Col} md="12">
+              {/* Periodo de la Tarea */}
+              <Form.Group className="mb-3">
                 <Form.Label>Periodo de la Tarea</Form.Label>
                 <DatePicker
                   selectsRange
@@ -342,8 +539,9 @@ const CreateTaskCard: React.FC = () => {
                 />
               </Form.Group>
 
-              <Row className="mb-2">
-                <Form.Group as={Col} md="6">
+              {/* Herramientas y Tipo de Mantenimiento */}
+              <Row className="mb-3">
+                <Form.Group as={Col} xs={12} md={6}>
                   <Form.Label>Herramientas</Form.Label>
                   {tools.map((tool, index) => (
                     <Form.Control
@@ -351,27 +549,26 @@ const CreateTaskCard: React.FC = () => {
                       type="text"
                       placeholder="Ingrese una herramienta"
                       value={tool}
-                      onChange={e => {
-                        const updatedTools = [...tools];
-                        updatedTools[index] = e.target.value;
-                        setTools(updatedTools);
+                      onChange={(e) => {
+                        const updated = [...tools];
+                        updated[index] = e.target.value;
+                        setTools(updated);
                       }}
                       required
+                      className="mb-2"
                     />
                   ))}
-                  <Button variant="outline-primary" onClick={() => setTools([...tools, ''])} className="mt-2">
+                  <Button variant="outline-primary" onClick={() => setTools([...tools, ''])} className="w-100">
                     Agregar otra herramienta
                   </Button>
                 </Form.Group>
-
-                <Form.Group as={Col} md="6">
+                <Form.Group as={Col} xs={12} md={6}>
                   <Form.Label>Tipo de Mantenimiento</Form.Label>
                   <Form.Control
                     as="select"
                     value={maintenanceType}
-                    onChange={e => setMaintenanceType(e.target.value)}
+                    onChange={(e) => setMaintenanceType(e.target.value)}
                     required
-                    name="maintenanceType"
                   >
                     <option value="" disabled>Seleccione un tipo de mantenimiento</option>
                     {maintenanceTypes.map((type) => (
@@ -383,33 +580,86 @@ const CreateTaskCard: React.FC = () => {
                 </Form.Group>
               </Row>
 
-              <Button type="submit" variant="primary" className="w-100">Crear Tarea</Button>
-            </Form>
+              {/* Información del Panel */}
+              <h4 className="section-title">Información del Panel</h4>
+              <Row className="mb-3">
+                <Form.Group as={Col} xs={12} controlId="panelMarca">
+                  <Form.Label>Marca del Panel</Form.Label>
+                  <Form.Control
+                    as="select"
+                    value={panelMarca}
+                    onChange={(e) => setPanelMarca(e.target.value)}
+                  >
+                    <option value="">Seleccione la Marca</option>
+                    <option value="Notifire">Notifire</option>
+                    <option value="Edwards">Edwards</option>
+                    <option value="Mircom">Mircom</option>
+                  </Form.Control>
+                </Form.Group>
+              </Row>
+              <Row className="mb-3">
+                <Form.Group as={Col} xs={12} md={6}>
+                  <Form.Label>Número de Lazos</Form.Label>
+                  <Form.Control
+                    as="select"
+                    value={lazos}
+                    onChange={(e) => setLazos(parseInt(e.target.value))}
+                  >
+                    {[...Array(5)].map((_, i) => (
+                      <option key={i} value={i + 1}>
+                        {i + 1}
+                      </option>
+                    ))}
+                  </Form.Control>
+                </Form.Group>
+                <Form.Group as={Col} xs={12} md={6}>
+                  <Form.Label>Descripción del Sistema</Form.Label>
+                  <Form.Control
+                    as="textarea"
+                    rows={4}
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                  />
+                </Form.Group>
+              </Row>
+
+              <Button type="submit" variant="primary" className="w-100" onClick={handleSubmit}>
+                Crear Tarea
+              </Button>
+            </div>
           </div>
         </Col>
+      </Row>
 
-        <Col md={7} style={{ paddingBottom: '20px', paddingLeft: '10px' }}>
-          <div style={{ backgroundColor: 'white', padding: '20px', borderRadius: '8px', boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.1)', flexGrow: 1 }}>
+      {/* Lista de Tareas */}
+      <Row className="mt-4">
+        <Col xs={12}>
+          <div className="task-list-card">
             <ListGroup className="mt-4">
-              {tasks.map(task => (
-                <ListGroup.Item key={task.id} className="d-flex justify-content-between align-items-center">
-                  <div>
-                    {`${task.taskCode}`}
+              {tasks.map((task) => (
+                <ListGroup.Item
+                  key={task.id}
+                  className="d-flex align-items-center justify-content-between my-list-item"
+                >
+                  <div className="task-code me-2">
+                    {task.taskCode}
                   </div>
-                  <div className="d-flex align-items-center" style={{ marginLeft: 'auto' }}>
-                    <ButtonGroup className="me-2">
-                      <Button variant="outline-info" onClick={() => handleShowDetails(task)}>Ver Detalles</Button>
-                    </ButtonGroup>
-                    <Dropdown align="end">
-                      <Dropdown.Toggle variant="link" id="dropdown-basic">
-                        <BsThreeDotsVertical />
-                      </Dropdown.Toggle>
-                      <Dropdown.Menu>
-                        <Dropdown.Item onClick={() => handleDeleteTask(task.id)}>Borrar Tarea</Dropdown.Item>
-                        <Dropdown.Item onClick={() => handleEditTask(task)}>Editar Tarea</Dropdown.Item>
-                      </Dropdown.Menu>
-                    </Dropdown>
-                  </div>
+                  <Dropdown align="end" className="three-dots-dropdown">
+                    <Dropdown.Toggle variant="link" id="dropdown-basic" className="p-0 three-dots-btn">
+                      <BsThreeDotsVertical size={20} />
+                    </Dropdown.Toggle>
+                    <Dropdown.Menu>
+                      <Dropdown.Item onClick={() => handleShowDetails(task)}>
+                        Ver Detalles
+                      </Dropdown.Item>
+                      <Dropdown.Item onClick={() => handleDeleteTask(task.id)}>
+                        Borrar Tarea
+                      </Dropdown.Item>
+                      <Dropdown.Item onClick={() => handleEditTask(task)}>
+                        Editar Tarea
+                      </Dropdown.Item>
+                    </Dropdown.Menu>
+                  </Dropdown>
                 </ListGroup.Item>
               ))}
             </ListGroup>
@@ -417,31 +667,36 @@ const CreateTaskCard: React.FC = () => {
         </Col>
       </Row>
 
+      {/* Modal de Detalles / Edición */}
       <Modal show={showModal} onHide={handleCloseModal}>
         <Modal.Header closeButton>
           <Modal.Title>{isEditing ? 'Editar Tarea' : 'Detalles de la Tarea'}</Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          {selectedTask && (
+          {selectedTask && !isEditing && (
             <>
-              {isEditing ? (
-                <>
-                  {/* Contenido para editar la tarea */}
-                </>
-              ) : (
-                <>
-                  <h5>{selectedTask.taskCode}</h5>
-                  <p>Categoría: {selectedTask.placeCategory}</p>
-                  <p>Lugar: {selectedTask.place}</p>
-                  <p>Hora de Ingreso: {selectedTask.checkInTime}</p>
-                  <p>Hora de Salida: {selectedTask.checkOutTime}</p>
-                  <p>Persona de contacto: {selectedTask.contactPerson.join(', ')}</p>
-                  <p>Número de contacto: {selectedTask.contactNumber}</p>
-                  <p>Personal Designado: {selectedTask.assignedPersonnel.join(', ')}</p>
-                  <p>Herramientas: {selectedTask.tools.join(', ')}</p>
-                  <p>Tipo de Mantenimiento: {selectedTask.maintenanceType}</p>
-                </>
-              )}
+              <h5>{selectedTask.taskCode}</h5>
+              <p><strong>Negocio:</strong> {selectedTask.negocio}</p>
+              <p><strong>Centro de Costo:</strong> {selectedTask.centroCosto}</p>
+              <p><strong>Nombre de Tienda:</strong> {selectedTask.storeName}</p>
+              <p><strong>OT:</strong> {selectedTask.ot}</p>
+              <p><strong>Fecha de Mantenimiento:</strong> {selectedTask.maintenanceDate?.toString()}</p>
+              <p><strong>Hora de Ingreso:</strong> {selectedTask.checkInTime}</p>
+              <p><strong>Hora de Salida:</strong> {selectedTask.checkOutTime}</p>
+              <p><strong>Contacto:</strong> {selectedTask.contactPerson?.join(', ')}</p>
+              <p><strong>Número de Contacto:</strong> {selectedTask.contactNumber}</p>
+              <p><strong>Personal Designado:</strong> {selectedTask.assignedPersonnel?.join(', ')}</p>
+              <p><strong>Herramientas:</strong> {selectedTask.tools?.join(', ')}</p>
+              <p><strong>Tipo de Mantenimiento:</strong> {selectedTask.maintenanceType}</p>
+              <p><strong>Periodo de la Tarea:</strong> {selectedTask.taskPeriod ? `Del ${selectedTask.taskPeriod[0]?.toString()} al ${selectedTask.taskPeriod[1]?.toString()}` : 'No definido'}</p>
+              <p><strong>Marca del Panel:</strong> {selectedTask.panelMarca}</p>
+              <p><strong>Número de Lazos:</strong> {selectedTask.lazos}</p>
+              <p><strong>Descripción del Sistema:</strong> {selectedTask.description}</p>
+            </>
+          )}
+          {selectedTask && isEditing && (
+            <>
+              <p>Formulario de Edición no implementado aún</p>
             </>
           )}
         </Modal.Body>
@@ -454,7 +709,7 @@ const CreateTaskCard: React.FC = () => {
               Guardar Cambios
             </Button>
           ) : (
-            <Button variant="primary" onClick={() => handleEditTask(selectedTask)}>
+            <Button variant="primary" onClick={() => handleEditTask(selectedTask!)}>
               Editar
             </Button>
           )}
@@ -464,4 +719,4 @@ const CreateTaskCard: React.FC = () => {
   );
 };
 
-export default CreateTaskCard;
+export default CreateTaskForm;

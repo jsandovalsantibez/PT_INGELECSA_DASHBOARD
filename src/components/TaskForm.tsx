@@ -2,14 +2,13 @@ import React, { useEffect, useState } from 'react';
 import { db, storage } from '../firebase';
 import { collection, getDocs, doc, updateDoc, getDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { Form, Button, Row, Col, Card } from 'react-bootstrap';
+import { Form, Button, Row, Col, Card, Modal } from 'react-bootstrap';
 import { eachDayOfInterval, format } from 'date-fns';
 import { useAuth } from '../components/AuthContext';
 import '../styles/style_taskform.css';
 
 interface Task {
   id: string;
-  panelMarca?: string;
   lazos?: number;
   detectorsByLazo?: { [key: string]: string[] };
   assignedPersonnel: string[];
@@ -25,23 +24,35 @@ const TaskForm: React.FC = () => {
   const { user, role } = useAuth();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
-  const [panelMarca, setPanelMarca] = useState<string>('');
+
+  // Número total de lazos de la tarea seleccionada
   const [lazos, setLazos] = useState<number>(0);
+
+  // Lazo seleccionado en la UI
   const [currentLazo, setCurrentLazo] = useState<number>(1);
+
+  // Estructura de detectores (hasta 159 por lazo)
   const [detectorsByLazo, setDetectorsByLazo] = useState<{ [key: string]: string[] }>({});
-  const [description, setDescription] = useState<string>('');
+
+  // Manejo de imágenes
   const [imagesInicio, setImagesInicio] = useState<(File | null)[]>([]);
   const [imagesTermino, setImagesTermino] = useState<(File | null)[]>([]);
   const [workDays, setWorkDays] = useState<Date[]>([]);
   const [uploadedDays, setUploadedDays] = useState<number>(0);
 
+  // Para el modal de Vista Previa
+  const [showPreview, setShowPreview] = useState(false);
+
+  // -----------------------------
+  // 1. Cargar tareas filtradas
+  // -----------------------------
   useEffect(() => {
     const fetchTasks = async () => {
+      if (!user) {
+        console.error('No hay usuario autenticado.');
+        return;
+      }
       try {
-        if (!user) {
-          console.error('No hay usuario autenticado.');
-          return;
-        }
         const tasksCollection = collection(db, 'taskCards');
         const taskDocs = await getDocs(tasksCollection);
         const tasksList = taskDocs.docs.map(doc => ({
@@ -57,32 +68,36 @@ const TaskForm: React.FC = () => {
         console.error('Error fetching tasks:', error);
       }
     };
-
     fetchTasks();
   }, [user, role]);
 
+  // -----------------------------
+  // 2. Al seleccionar una tarea
+  // -----------------------------
   const handleTaskSelect = async (taskId: string) => {
     const task = tasks.find(t => t.id === taskId);
-    if (task) {
-      setSelectedTask(task);
-      setPanelMarca(task.panelMarca || '');
-      setLazos(task.lazos || 0);
-      setDetectorsByLazo(task.detectorsByLazo || {});
-      setDescription('');
-      setCurrentLazo(1);
+    if (!task) return;
 
-      if (task.taskPeriod && task.taskPeriod.length === 2) {
-        const [start, end] = task.taskPeriod;
-        const days = eachDayOfInterval({
-          start: new Date(start.seconds * 1000),
-          end: new Date(end.seconds * 1000),
-        });
-        setWorkDays(days);
-        await checkUploadedImages(task, days);
-      }
+    setSelectedTask(task);
+    setLazos(task.lazos || 0);
+    setDetectorsByLazo(task.detectorsByLazo || {});
+    setCurrentLazo(1);
+
+    // Calcular días si hay periodo
+    if (task.taskPeriod && task.taskPeriod.length === 2) {
+      const [start, end] = task.taskPeriod;
+      const days = eachDayOfInterval({
+        start: new Date(start.seconds * 1000),
+        end: new Date(end.seconds * 1000),
+      });
+      setWorkDays(days);
+      await checkUploadedImages(task, days);
     }
   };
 
+  // -----------------------------
+  // 3. Verificar imágenes subidas
+  // -----------------------------
   const checkUploadedImages = async (task: Task, days: Date[]) => {
     try {
       const taskDocRef = doc(db, 'taskCards', task.id);
@@ -104,27 +119,34 @@ const TaskForm: React.FC = () => {
     }
   };
 
+  // -----------------------------
+  // 4. Actualizar detectores
+  // -----------------------------
   useEffect(() => {
-    const updatedDetectorsByLazo: { [key: string]: string[] } = {};
+    const updated: { [key: string]: string[] } = {};
     for (let i = 1; i <= lazos; i++) {
       const lazoKey = `L${i}`;
-      updatedDetectorsByLazo[lazoKey] = detectorsByLazo[lazoKey] || Array(50).fill('no_hecho');
+      // Hasta 159 detectores
+      updated[lazoKey] = detectorsByLazo[lazoKey] || Array(159).fill('no_hecho');
     }
-    setDetectorsByLazo(updatedDetectorsByLazo);
+    setDetectorsByLazo(updated);
   }, [lazos]);
 
+  // -----------------------------
+  // 5. Renderizar detectores
+  // -----------------------------
   const renderDetectorFields = () => {
     const lazoKey = `L${currentLazo}`;
-    const detectors = detectorsByLazo[lazoKey] || Array(50).fill('no_hecho');
+    const detectors = detectorsByLazo[lazoKey] || Array(159).fill('no_hecho');
 
     return (
       <div className="detector-fields">
         <Card.Body>
           <Card.Title>Dispositivos del Lazo {currentLazo}</Card.Title>
           <Row>
-            {/* Primera columna de detectores (1-25) */}
+            {/* Primera columna: índices 0..79 */}
             <Col xs={12} md={6}>
-              {detectors.slice(0, 25).map((state, index) => (
+              {detectors.slice(0, 80).map((state, index) => (
                 <div key={`${lazoKey}D${index + 1}`} className="detector-row">
                   <Form.Label className="detector-label">{`L${currentLazo}D${index + 1}`}</Form.Label>
                   <Button
@@ -141,44 +163,34 @@ const TaskForm: React.FC = () => {
                   >
                     No Hecho
                   </Button>
-                  <Button
-                    variant={state === 'obstruido' ? 'warning' : 'outline-warning'}
-                    onClick={() => handleStateChange(lazoKey, index, 'obstruido')}
-                    size="sm"
-                  >
-                    Obstruido
-                  </Button>
                 </div>
               ))}
             </Col>
-            {/* Segunda columna de detectores (26-50) */}
+
+            {/* Segunda columna: índices 80..158 */}
             <Col xs={12} md={6}>
-              {detectors.slice(25, 50).map((state, index) => (
-                <div key={`${lazoKey}D${index + 26}`} className="detector-row">
-                  <Form.Label className="detector-label">{`L${currentLazo}D${index + 26}`}</Form.Label>
-                  <Button
-                    variant={state === 'hecho' ? 'success' : 'outline-success'}
-                    onClick={() => handleStateChange(lazoKey, index + 25, 'hecho')}
-                    size="sm"
-                  >
-                    Hecho
-                  </Button>
-                  <Button
-                    variant={state === 'no_hecho' ? 'danger' : 'outline-danger'}
-                    onClick={() => handleStateChange(lazoKey, index + 25, 'no_hecho')}
-                    size="sm"
-                  >
-                    No Hecho
-                  </Button>
-                  <Button
-                    variant={state === 'obstruido' ? 'warning' : 'outline-warning'}
-                    onClick={() => handleStateChange(lazoKey, index + 25, 'obstruido')}
-                    size="sm"
-                  >
-                    Obstruido
-                  </Button>
-                </div>
-              ))}
+              {detectors.slice(80, 159).map((state, index) => {
+                const realIndex = index + 80;
+                return (
+                  <div key={`${lazoKey}D${realIndex + 1}`} className="detector-row">
+                    <Form.Label className="detector-label">{`L${currentLazo}D${realIndex + 1}`}</Form.Label>
+                    <Button
+                      variant={state === 'hecho' ? 'success' : 'outline-success'}
+                      onClick={() => handleStateChange(lazoKey, realIndex, 'hecho')}
+                      size="sm"
+                    >
+                      Hecho
+                    </Button>
+                    <Button
+                      variant={state === 'no_hecho' ? 'danger' : 'outline-danger'}
+                      onClick={() => handleStateChange(lazoKey, realIndex, 'no_hecho')}
+                      size="sm"
+                    >
+                      No Hecho
+                    </Button>
+                  </div>
+                );
+              })}
             </Col>
           </Row>
         </Card.Body>
@@ -186,6 +198,9 @@ const TaskForm: React.FC = () => {
     );
   };
 
+  // -----------------------------
+  // 6. Cambiar estado de detector
+  // -----------------------------
   const handleStateChange = (lazo: string, index: number, state: string) => {
     setDetectorsByLazo(prev => ({
       ...prev,
@@ -193,25 +208,28 @@ const TaskForm: React.FC = () => {
     }));
   };
 
+  // -----------------------------
+  // 7. Guardar cambios
+  // -----------------------------
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (selectedTask) {
-      try {
-        const taskDocRef = doc(db, 'taskCards', selectedTask.id);
-        await updateDoc(taskDocRef, {
-          panelMarca,
-          lazos,
-          detectorsByLazo,
-          description,
-          active: true,
-        });
-        alert('Formulario guardado con éxito');
-      } catch (error) {
-        console.error('Error al guardar la tarea:', error);
-      }
+    if (!selectedTask) return;
+
+    try {
+      const taskDocRef = doc(db, 'taskCards', selectedTask.id);
+      await updateDoc(taskDocRef, {
+        detectorsByLazo,
+        active: true,
+      });
+      alert('Formulario guardado con éxito');
+    } catch (error) {
+      console.error('Error al guardar la tarea:', error);
     }
   };
 
+  // -----------------------------
+  // 8. Manejo de imágenes
+  // -----------------------------
   const handleImageChange = (
     e: React.ChangeEvent<HTMLInputElement>,
     type: 'inicio' | 'termino',
@@ -239,6 +257,7 @@ const TaskForm: React.FC = () => {
   };
 
   const handleSaveDayImages = async (dayIndex: number) => {
+    if (!selectedTask) return;
     const selectedDay = format(workDays[dayIndex], 'yyyyMMdd');
     const inicioImage = imagesInicio[dayIndex];
     const terminoImage = imagesTermino[dayIndex];
@@ -249,10 +268,10 @@ const TaskForm: React.FC = () => {
     }
 
     try {
-      const inicioImageUrl = await uploadImageToStorage(inicioImage!, selectedTask!.taskCode, selectedDay, 'inicio');
-      const terminoImageUrl = await uploadImageToStorage(terminoImage!, selectedTask!.taskCode, selectedDay, 'termino');
+      const inicioImageUrl = await uploadImageToStorage(inicioImage!, selectedTask.taskCode, selectedDay, 'inicio');
+      const terminoImageUrl = await uploadImageToStorage(terminoImage!, selectedTask.taskCode, selectedDay, 'termino');
 
-      const taskDocRef = doc(db, 'taskCards', selectedTask!.id);
+      const taskDocRef = doc(db, 'taskCards', selectedTask.id);
       await updateDoc(taskDocRef, {
         [`images.${selectedDay}.inicio`]: inicioImageUrl,
         [`images.${selectedDay}.termino`]: terminoImageUrl,
@@ -265,17 +284,70 @@ const TaskForm: React.FC = () => {
     }
   };
 
+  // -----------------------------
+  // 9. Vista Previa (Modal)
+  // -----------------------------
+  const handleClosePreview = () => setShowPreview(false);
+
+  // Contenido del modal
+  const renderPreviewModalContent = () => {
+    if (!selectedTask) {
+      return <p>No hay tarea seleccionada.</p>;
+    }
+
+    return (
+      <>
+        <h5>Tarea: {selectedTask.taskCode}</h5>
+        <p>Lugar: {selectedTask.place}</p>
+        <p>Número de Lazos: {lazos}</p>
+        <hr />
+
+        {Object.keys(detectorsByLazo).map((lazoKey) => {
+          const detectors = detectorsByLazo[lazoKey];
+          return (
+            <div key={lazoKey} className="mb-4">
+              <h6 style={{ marginBottom: '10px' }}>{lazoKey}</h6>
+              <table className="table table-striped table-bordered table-hover table-sm">
+                <thead>
+                  <tr>
+                    <th style={{ width: '30%' }}>Detector</th>
+                    <th>Estado</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {detectors.map((state, idx) => (
+                    <tr key={idx}>
+                      <td>{`${lazoKey}D${idx + 1}`}</td>
+                      <td>
+                        {state === 'hecho' ? (
+                          <span className="badge bg-success">Hecho</span>
+                        ) : (
+                          <span className="badge bg-danger">No Hecho</span>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          );
+        })}
+      </>
+    );
+  };
+
+  // -----------------------------
+  // Render principal
+  // -----------------------------
   return (
     <div className="task-form-container">
       <h2 className="form-title">Formulario de trabajo</h2>
       <hr className="form-hr" />
 
-      {/* Contenedor centrado */}
       <div className="form-wrapper">
         <Form onSubmit={handleSubmit}>
-          {/* Fila superior (Cuadrante 1 y 2) */}
           <Row className="task-row">
-            {/* Cuadrante 1: Seleccionar Tarea y Descripción */}
+            {/* Cuadrante 1: Seleccionar Tarea */}
             <Col md={6} xs={12} className="mb-3">
               <Card className="task-card">
                 <Card.Body>
@@ -294,22 +366,6 @@ const TaskForm: React.FC = () => {
                       ))}
                     </Form.Control>
                   </Form.Group>
-
-                  <Form.Group controlId="description" className="mt-3">
-                    <Form.Label>Descripción del Sistema</Form.Label>
-                    <Form.Control
-                      as="textarea"
-                      rows={5}
-                      value={description}
-                      onChange={(e) => setDescription(e.target.value)}
-                    />
-                  </Form.Group>
-
-                  {selectedTask && (
-                    <Button type="submit" variant="primary" className="mt-3">
-                      Guardar Formulario
-                    </Button>
-                  )}
                 </Card.Body>
               </Card>
             </Col>
@@ -348,48 +404,18 @@ const TaskForm: React.FC = () => {
             </Col>
           </Row>
 
-          {/* Fila inferior (Cuadrante 3 y 4) */}
           <Row className="task-row">
-            {/* Cuadrante 3: Datos generales (Panel, Lazos, etc.) */}
+            {/* Cuadrante 3: Seleccionar Lazo */}
             <Col md={6} xs={12} className="mb-3">
               <Card className="task-card">
                 <Card.Body>
-                  <Form.Group controlId="panelMarca">
-                    <Form.Label>Marca del Panel</Form.Label>
-                    <Form.Control
-                      as="select"
-                      value={panelMarca}
-                      onChange={(e) => setPanelMarca(e.target.value)}
-                    >
-                      <option value="">Seleccione la Marca</option>
-                      <option value="Notifire">Notifire</option>
-                      <option value="Edwards">Edwards</option>
-                      <option value="Mircom">Mircom</option>
-                    </Form.Control>
-                  </Form.Group>
-
-                  <Form.Group controlId="lazos" className="mt-3">
-                    <Form.Label>Número de Lazos</Form.Label>
-                    <Form.Control
-                      as="select"
-                      value={lazos}
-                      onChange={(e) => setLazos(parseInt(e.target.value))}
-                    >
-                      {[...Array(5)].map((_, i) => (
-                        <option key={i + 1} value={i + 1}>
-                          {i + 1}
-                        </option>
-                      ))}
-                    </Form.Control>
-                  </Form.Group>
-
-                  <Form.Group controlId="currentLazo" className="mt-3">
-                    <Form.Label>Lazo</Form.Label>
+                  <Form.Group controlId="currentLazo">
+                    <Form.Label>Seleccione Lazo</Form.Label>
                     <Form.Control
                       as="select"
                       value={currentLazo}
                       onChange={(e) => setCurrentLazo(parseInt(e.target.value))}
-                      disabled={lazos === 0}
+                      disabled={!selectedTask || lazos === 0}
                     >
                       {[...Array(lazos)].map((_, i) => (
                         <option key={i + 1} value={i + 1}>
@@ -402,15 +428,48 @@ const TaskForm: React.FC = () => {
               </Card>
             </Col>
 
-            {/* Cuadrante 4: Dispositivos */}
+            {/* Cuadrante 4: Dispositivos del lazo */}
             <Col md={6} xs={12} className="mb-3">
               <Card className="task-card detector-card">
                 <Card.Body>{lazos > 0 && renderDetectorFields()}</Card.Body>
               </Card>
             </Col>
           </Row>
+
+          {/* Sección de botones al final */}
+          <div className="text-center mt-4">
+            {/* Botón Vista Previa */}
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => setShowPreview(true)}
+              disabled={!selectedTask}
+            >
+              Vista Previa
+            </Button>
+
+            {/* Botón Guardar Formulario */}
+            {selectedTask && (
+              <Button type="submit" variant="primary" className="ms-3">
+                Guardar Formulario
+              </Button>
+            )}
+          </div>
         </Form>
       </div>
+
+      {/* Modal de Vista Previa con tablas */}
+      <Modal show={showPreview} onHide={handleClosePreview} size="lg">
+        <Modal.Header closeButton>
+          <Modal.Title>Vista Previa del Avance</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>{renderPreviewModalContent()}</Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={handleClosePreview}>
+            Cerrar
+          </Button>
+        </Modal.Footer>
+      </Modal>
     </div>
   );
 };
